@@ -8,7 +8,9 @@
 #' 
 #' 3. Use virtualspecies package to generate a virtual species distribution
 #' 
-#' 4. Sample the virtual species distribution according to existing sampling effort pattern (TO EXTRACT)
+#' 4. From the species distribution determine where the species is present and where it is absent (i.e. create binary map)
+#' 
+#' 5. Sample the virtual species distribution according to existing sampling effort pattern (TO EXTRACT)
 
 
 
@@ -90,13 +92,31 @@ for(i in 1:10){
 }
 
 #' Seems like a reasonable mix of species with wide and narrow niche breadths
+#'
+#' Alternatively we can generate species without the PCA step by generating random responses to each of the environmental gradients (functions are available to parameterise these responses using e.g. known species niches but this is probably a level of complexity above what we need in this project).
+#' 
+virt_comm2 <- list()
+for (i in 1:10){
+my.stack <- hbv_y[[sample(1:nlayers(hbv_y),size = runif(1,5,25), replace = FALSE)]]
+random.sp <- generateRandomSp(my.stack, approach = "response", convert.to.PA = FALSE, realistic.sp = TRUE, plot = FALSE)
+virt_comm2[[i]] <- random.sp
+}
+
+par(mfrow=c(5,2))
+par(mar= c(1,1,1,1))
+for(i in 1:10){
+  plot(virt_comm2[[i]])
+}
+
+#' Seems to struggle to come up with reasonable species distributions, PCA approach seems sensible
+
 #' 
 #' 
-#' 4. Sample from species distribution
+#' 4. Create binary map
 #' 
-#' Once the underlying distribution/environmental suitability is defined we can then sample from it to determine where the species is present and observed
+#' Once the underlying distribution/environmental suitability is defined we can then determine where the species is present (i.e. the species won't be present in all areas where suitability is high and may be present in some areas where suitability is only moderate)
 #' 
-#'  We do this probabilistically so that the regions of highest suitability are those with highest likelihood of a species being present. By default a logistic conversion is used to convert environmental suitability to probability of occurrence. The shape of the logistic relationship means that the differences between suitability scores have most impact on probability of occurrence at medium values. This conversion is customisable but the default will randomly assign conversion parameters.
+#'  We determine where the species is present probabilistically so that the regions of highest suitability are those with highest probability of a species being present. By default a logistic conversion is used to convert environmental suitability to probability of occurrence. The shape of the logistic relationship means that the differences between suitability scores have most impact on probability of occurrence at medium values. This conversion is customisable but the default will randomly assign conversion parameters.
 #'  
 #'  We can see what this looks like for our virtual community using randomly assigned conversions
 #' 
@@ -116,6 +136,37 @@ for(i in 1:10){
   plot(pa[[i]]$pa.raster)
 }
 
+#' It is also possible to modify this conversion to reach a specific level of coverage/prevalence i.e. to simulate a species that covers 5% or 50% of the available area. However, by using the standard conversion we will already achieve species with different prevalences so it may not be neccessary to adjust this. 
+#' 
+#' 
+#' 5. Sample occurrences
+#' 
+#' Let's look at the first of our species again
+#' 
+plot(pa[[1]])
 #'    
-#'    
-#'    
+#' We now want to simulate sampling of these presences in a way that mirrors real life sampling:
+#' 
+#' 1. Sampling is biased to certain regions (easily accessible, high human population density etc)
+#' 
+#' 2. Detection probability is less than 1 (note that initially we'll assume detection probability is the same a) between species b) across space - these are big assumptions that we'll come back to later and assess)
+#' 
+#' 3. We sample presences only, but use presences from other species to create pseudo-absences
+#' 
+#' The virtualspecies package requires a maximum number of observations to sample which are then thinned by removing absences. Note that an alternative method to generate these presences would be to use the probability of occurrence or suitability rasters to create an intensity raster (effectively interpreted as the density of individuals per unit area). We could then use point process theory to generate presences as realisations of an (inhomogenous or log Gaussian Cox) point process. Point process theory states that the higher the intensity, the more points (individuals) per unit area are expected. However, sampling using this method is likely to be computationally inefficient with a high resolution problem so for now we'll ignore this (but note that there are advantages of a point process framework we might want to come back to later, not least the potential to combine presence-only, presence-absence data and abundance in continuous space and the ability to generate a random number of presences conditional on the intensity).
+#' 
+#' Ok, so let's simulate some presence-only data derived from species 1, assuming a detection probability of 0.5.
+#' 
+#' 
+par(mfrow=c(1,1))
+sp.obs1 <- sampleOccurrences(pa[[1]], n = 100, type = "presence only", detection.probability = 0.5)
+
+length(sp.obs1$sample.points$Observed[!is.na(sp.obs1$sample.points$Observed)])
+
+#' Most observations in the east where suitability is higher, note that due to the detection probability being less than 1 the number of observations retrieved is less than 100
+#' 
+#' However, in the current set up the number of observations made is deterministic and not a function of prevalence (for example we might expect a widespread species to have more observations than a species restricted to moorlands). In addition, there is currently no sampling bias, and equal effort is expended across the region. 
+#' 
+#' Next step - unequal effort
+#' 
+#' Firstly, we can introduce a sampling bias.
