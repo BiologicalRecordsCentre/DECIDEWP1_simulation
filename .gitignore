@@ -43,4 +43,4 @@ vignettes/*.pdf
 
 .yaml
 *.Rproj
-
+*.Rdata

@@ -10,7 +10,7 @@
 #' 
 #' 4. From the species distribution determine where the species is present and where it is absent (i.e. create binary map)
 #' 
-#' 5. Sample the virtual species distribution according to existing sampling effort pattern (TO EXTRACT)
+#' 5. Sample the virtual species distribution according to existing sampling effort pattern (TO EXTRACT - currently uses suburban area to mimic variation in effort)
 
 
 
@@ -201,3 +201,5 @@ for (i in 1:10){
 max_obs <- round(prev_vec[i]*1000)
 sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence only", detection.probability = 0.5, bias = "manual", weights = sub_weight)
 }
+
+save.image(file = "virt_comm_10spp.Rdata")
