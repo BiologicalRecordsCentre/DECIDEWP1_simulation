@@ -169,4 +169,35 @@ length(sp.obs1$sample.points$Observed[!is.na(sp.obs1$sample.points$Observed)])
 #' 
 #' Next step - unequal effort
 #' 
-#' Firstly, we can introduce a sampling bias.
+#' Firstly, we can introduce a sampling bias related to environment - for example we could assume that high suburban sites are more commonly visited than areas with low surburan area
+#' 
+suburban <- hbv_y[[21]]
+
+#we can set weights so that the highest suburban areas are 10 times more likely to be sampled than the lowest suburban areas (on the original scale suburban areas were 100 times more likely to be sampled which may be extreme)
+
+sub_weight <- suburban/10
+
+#' Now we can use this weight to alter our sampling 
+#' 
+sp.obs2 <- sampleOccurrences(pa[[1]], n = 100, type = "presence only", detection.probability = 0.5, bias = "manual", weights = sub_weight)
+#'  
+#' Real life sampling biases are often really challenging to explain as they are complex combinations of the many motivations of observers. However, we can approximate these by using known sampling patterns from existing recorders to simulate realistic patterns in sampling effort
+#' 
+#' One other element to add would be to specify n (the number of observations prior to thinning due to detection probability) as proportional to prevalence i.e. those species that are more widespread would have a higher potential number of observations. This is currently not included as part of the virtualspecies package but would be easy to implement    
+#' 
+#extract prevalence for all species in virt_comm1
+prev_vec <- vector()
+for (i in 1:length(pa)){
+  prev_vec[i] <- as.numeric(pa[[i]]$PA.conversion[5])
+}
+prev_vec
+#' Prevalence ranges between 0.021 and 0.977 (possibly a bit high overall? reasonable for trials)
+#' 
+#' Sample proportional to prevalence, weighted by suburban area
+#' 
+par(mfrow=c(5,2))
+sp.obs <- list()
+for (i in 1:10){
+max_obs <- round(prev_vec[i]*1000)
+sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence only", detection.probability = 0.5, bias = "manual", weights = sub_weight)
+}
