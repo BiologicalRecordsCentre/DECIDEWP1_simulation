@@ -200,6 +200,7 @@ sp.obs <- list()
 for (i in 1:10){
 max_obs <- round(prev_vec[i]*1000)
 sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence only", detection.probability = 0.5, bias = "manual", weights = sub_weight)
+names(sp.obs[[i]]$sample.points) <- c("lon", "lat", "Real", "Observed")
 }
 
 save.image(file = "virt_comm_10spp.Rdata")

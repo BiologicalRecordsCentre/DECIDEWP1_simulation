@@ -69,6 +69,83 @@ lr_mod <- fsdm(species = "Sp1", model = "lr",
 
 lr_mod
 
+sdm <- lr_mod
+#predictions
 
+env_data <- subset(hbv_y, subset = virt_comm1[[1]]$details$variables)
+
+boots_out <- raster::stack(lapply(lr_mod$Bootstrapped_models, FUN = function(x) predict(env_data, x, type="response", index=NULL)))
+
+## quantiles
+print(paste0('#####   getting quantiles   #####'))
+mean_preds <- calc(boots_out, fun = mean, na.rm = T)
+quant_preds <- calc(boots_out, fun = function(x) {quantile(x, probs = c(0.05, 0.95), na.rm = TRUE)})
+rnge <- quant_preds[[2]]-quant_preds[[1]]
+
+## save files ##
+print("#####     Saving files     #####")
+species_name <- gsub(pattern = ' ', replacement = '_', species) # get species name without space
+
+outPath <- paste0(getwd(), "/Outputs/")
+
+# save prediction raster
+print("#####     Saving prediction raster     #####")
+writeRaster(x = mean_preds, 
+            filename = paste0(outPath, model, "_SDMs_", species_name, "_meanpred.grd"),
+            format = 'raster', overwrite = T)
+
+# save quantile max min
+print("#####     Saving quantile max min raster     #####")
+writeRaster(x = quant_preds, 
+            filename = paste0(outPath, model, "_SDMs_", species_name, "_quantilemaxmin.grd"),
+            format = 'raster', overwrite = T)
+
+# save quantile range raster
+print("#####     Saving quantile range raster     #####")
+writeRaster(x = rnge, 
+            filename = paste0(outPath, model, "_SDMs_", species_name, "_quantilerange.grd"),
+            format = 'raster', overwrite = T)
+
+# write AUC to file for easy-access
+print("#####     Writing AUC to file     #####")
+write.csv(x = data.frame(raw_AUC = sdm$AUC,
+                         meanAUC = sdm$meanAUC),
+          file = paste0(outPath, model, "_SDMs_", species_name, "_AUC_values.csv"))
+
+# write data to file too
+print("#####     Writing data to file     #####")
+write.csv(x = sdm$Data,
+          file = paste0(outPath, model, "_SDMs_", species_name, "_Data.csv"))
+
+# save subset model output
+print("#####     Saving model output     #####")
+
+# remove data from model output
+sdm$Data <- NULL
+
+# outout of model to store
+model_output <- list(species = species_name,
+                     model = model,
+                     sdm_output = sdm,
+                     number_validations = k)
+
+save(model_output, file = paste0(outPath, model, "_SDMs_", species_name, 
+                                 ".rdata"))
+
+#' Calculate very simple DECIDE score - prediction * quantile range
+
+DECIDE_score <- mean_preds*rnge
+
+#' Plot maps
+#' 
+par(mfrow=c(3,2))
+par(mar = c(2,2,2,2))
+plot(virt_comm1[[1]], main = "Environmental suitability")
+plot(pa[[1]]$probability.of.occurrence, main = "Probability of occurrence")
+plot(pa[[1]]$pa.raster, main = "Presence absence")
+points(sp.obs[[1]]$sample.points[is.na(sp.obs[[1]]$sample.points$Observed),1:2], pch = 20)
+plot(mean_preds, main = "Predicted prob. occ")
+plot(rnge, main = "Quantile range of predictions")
+plot(DECIDE_score, main = "DECIDE score")
 
 
