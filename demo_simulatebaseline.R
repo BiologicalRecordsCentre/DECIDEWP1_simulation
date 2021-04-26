@@ -23,6 +23,7 @@ set.seed(1000)#set seed for test runs to check performance
 
 #set path to DECIDE env data (mapped mine to F as issues reading off Wallingford P drive for some reason)
 epath <- "F:Data\\WP1 modelling\\"
+epath <- 'P:/07543_DECIDE/Data/WP1 modelling/'
 
 # read in data
 env_data <- raster::stack(paste0(epath, "edat_nocorrs_nosea.gri"))
