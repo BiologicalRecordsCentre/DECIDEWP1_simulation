@@ -16,6 +16,7 @@
 library(raster)
 library(virtualspecies)
 library(dismo)
+library(rgdal)
 
 set.seed(1000)
 
@@ -61,26 +62,31 @@ names(pa_sets)[i] <- paste0("Sp",i)
 #source Edited Rob Functions
 devtools::source_url("https://raw.githubusercontent.com/TMondain/DECIDE_WP1/main/scripts/functions/Edited_Rob_Functions.R")
 
+hbv_y <- raster::stack("hbv_y.grd") 
+
+env_data <- subset(hbv_y, subset = virt_comm1[[1]]$details$variables)
+#source code from Thomas' workflow
+source("getpredictions.R")
+
+#loop over all 10 species - bit slow on laptop, bit clunky
+
+for (j in 1:length(pa_sets)){
+  
+species = paste0("Sp", j)
+model <- "lr"
+k = 4
+
+print(paste0("#####     Running Species ", j, "     #####"))
+
 #run model for first species
-lr_mod <- fsdm(species = "Sp1", model = "lr",
-     climDat = subset(hbv_y, subset = virt_comm1[[1]]$details$variables), spData = pa_sets, knots_gam = -1,
+sdm <- fsdm(species = species, model = "lr",
+     climDat = env_data, spData = pa_sets, knots_gam = -1,
      k = 4, 
      write =  TRUE, outPath = "lr_outs/")
 
-lr_mod
-
-sdm <- lr_mod
 #predictions
 
-env_data <- subset(hbv_y, subset = virt_comm1[[1]]$details$variables)
-
-boots_out <- raster::stack(lapply(lr_mod$Bootstrapped_models, FUN = function(x) predict(env_data, x, type="response", index=NULL)))
-
-## quantiles
-print(paste0('#####   getting quantiles   #####'))
-mean_preds <- calc(boots_out, fun = mean, na.rm = T)
-quant_preds <- calc(boots_out, fun = function(x) {quantile(x, probs = c(0.05, 0.95), na.rm = TRUE)})
-rnge <- quant_preds[[2]]-quant_preds[[1]]
+preds1 <- get_predictions(sdm, "lr", env_data)
 
 ## save files ##
 print("#####     Saving files     #####")
@@ -90,19 +96,19 @@ outPath <- paste0(getwd(), "/Outputs/")
 
 # save prediction raster
 print("#####     Saving prediction raster     #####")
-writeRaster(x = mean_preds, 
+writeRaster(x = preds1$mean_predictions, 
             filename = paste0(outPath, model, "_SDMs_", species_name, "_meanpred.grd"),
             format = 'raster', overwrite = T)
 
 # save quantile max min
 print("#####     Saving quantile max min raster     #####")
-writeRaster(x = quant_preds, 
+writeRaster(x = preds1$quant_minmax, 
             filename = paste0(outPath, model, "_SDMs_", species_name, "_quantilemaxmin.grd"),
             format = 'raster', overwrite = T)
 
 # save quantile range raster
 print("#####     Saving quantile range raster     #####")
-writeRaster(x = rnge, 
+writeRaster(x = preds1$quant_range, 
             filename = paste0(outPath, model, "_SDMs_", species_name, "_quantilerange.grd"),
             format = 'raster', overwrite = T)
 
@@ -132,20 +138,29 @@ model_output <- list(species = species_name,
 save(model_output, file = paste0(outPath, model, "_SDMs_", species_name, 
                                  ".rdata"))
 
+
 #' Calculate very simple DECIDE score - prediction * quantile range
 
-DECIDE_score <- mean_preds*rnge
+DECIDE_score <- preds1$mean_predictions*preds1$quant_range
+
+print("#####     Saving DECIDE score raster     #####")
+writeRaster(x = DECIDE_score, 
+            filename = paste0(outPath, model, "_SDMs_", species_name, "_DECIDEscore.grd"),
+            format = 'raster', overwrite = T)
 
 #' Plot maps
 #' 
+png(paste0("Plots/Sp", j,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
+
 par(mfrow=c(3,2))
 par(mar = c(2,2,2,2))
 plot(virt_comm1[[1]], main = "Environmental suitability")
 plot(pa[[1]]$probability.of.occurrence, main = "Probability of occurrence")
 plot(pa[[1]]$pa.raster, main = "Presence absence")
 points(sp.obs[[1]]$sample.points[is.na(sp.obs[[1]]$sample.points$Observed),1:2], pch = 20)
-plot(mean_preds, main = "Predicted prob. occ")
-plot(rnge, main = "Quantile range of predictions")
+plot(preds1$mean_predictions, main = "Predicted prob. occ")
+plot(preds1$quant_range, main = "Quantile range of predictions")
 plot(DECIDE_score, main = "DECIDE score")
 
-
+dev.off()
+}

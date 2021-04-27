@@ -39,6 +39,7 @@ hbv_y <- raster::crop(env_data, e.geo)
 par(mfrow=c(1,1))
 plot(hbv_y[[1]], main = names(hbv_y[[1]]))
 
+#writeRaster(hbv_y, "hbv_y.grd")
 
 #' ## 2. Subset environmental layers
 
