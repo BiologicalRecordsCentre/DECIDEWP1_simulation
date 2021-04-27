@@ -44,6 +44,11 @@ vignettes/*.pdf
 .Rproj.user
 
 
-.yaml
+*.yaml
 *.Rproj
 *.Rdata
+Outputs/*
+Plots/*
+*.gri
+*.grd
+test_outputs/*
