@@ -17,6 +17,7 @@ get_predictions <- function(model_outs,
   
   # number of bootstraps that were run
   k = length(model_outs)
+  sdm = model_outs
   
   ## bootstrapped models
   print(paste0('#####   predicting from bootstrapped models   #####')) 
