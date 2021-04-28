@@ -36,15 +36,41 @@ load("virt_comm_10spp.Rdata")
 
 #sample new obs (no longer weighted by prevalence? want to weight by prevalence? not sure) weighted by DECIDE score
 
-DECIDE_weights <- DECIDE_allspp*100 #rescale (needs refining)
+DECIDE_weights <- DECIDE_allspp
 
-par(mfrow=c(5,2))
-new.obs <- list()
-for (i in 1:10){
-  max_obs <- round(prev_vec[i]*100)
-  new.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence only", detection.probability = 0.5, bias = "manual", weights = DECIDE_weights)
-  names(new.obs[[i]]$sample.points) <- c("lon", "lat", "Real", "Observed")
+#scale to probability raster - sum of all cells = 1 so probs are small...could cause computational issues?
+DECIDE_weights <- DECIDE_weights/sum(getValues(DECIDE_weights), na.rm=T)
+
+#sample new observations with the same probability for all species
+
+#function from https://scrogster.wordpress.com/2012/04/22/using-r-for-spatial-sampling-with-selection-probabilities-defined-in-a-raster/
+probsel<-function(probrast, N){
+  x<-getValues(probrast)
+  #set NA cells in raster to zero
+  x[is.na(x)]<-0
+  samp<-sample(nrow(probrast)*ncol(probrast), size=N, prob=x)
+  samprast<-raster(probrast)
+  samprast[samp]<-1 #set value of sampled squares to 1
+  #convert to SpatialPoints
+  points<-rasterToPoints(samprast, fun=function(x){x>0})
+  points<-SpatialPoints(points)
+  return(points)
 }
 
+#new sampling locations
+new_locs <- probsel(DECIDE_weights, 100)
 
+#now sample from species rasters with given locations
+new.obs <- list()
+for (i in 1:length(pa)){
+  sample.points <- data.frame(coordinates(new_locs)[,1:2])
+  sample.points$Real <- extract(pa[[i]]$pa.raster, sample.points)
+  sample.points <- sample.points[sample.points$Real == 1,]#remove absences to create presence-only data?
+  sample.points$Observed <- sample.points$Real * (rbinom(nrow(sample.points),1,0.5))
+  sample.points[sample.points == 0] <- NA
+  new.obs[[i]] <- list()
+  new.obs[[i]]$sample.points <- sample.points
+}
+
+#should mimic structure of sampleOccurrences output to help with modelling although some weird NA locations need checking, also may be simpler way to do this
 
