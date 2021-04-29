@@ -57,7 +57,7 @@ probsel<-function(probrast, N){
   return(points)
 }
 
-#new sampling locations
+#new sampling locations - currently using DECIDE weights but could use the suburban raster if we wanted to mimic no adaptive sampling e.g. repeat existing sampling patterns
 new_locs <- probsel(DECIDE_weights, 100)
 
 #now sample from species rasters with given locations
@@ -67,10 +67,17 @@ for (i in 1:length(pa)){
   sample.points$Real <- extract(pa[[i]]$pa.raster, sample.points)
   sample.points <- sample.points[sample.points$Real == 1,]#remove absences to create presence-only data?
   sample.points$Observed <- sample.points$Real * (rbinom(nrow(sample.points),1,0.5))
+  sample.points <- sample.points[!is.na(sample.points$x),]#remove missing locs
   sample.points[sample.points == 0] <- NA
+  names(sample.points) <- c("lon", "lat", "Real", "Observed")
   new.obs[[i]] <- list()
   new.obs[[i]]$sample.points <- sample.points
 }
 
-#should mimic structure of sampleOccurrences output to help with modelling although some weird NA locations need checking, also may be simpler way to do this
+#should mimic structure of sampleOccurrences output to help with modelling, may be simpler way to do this
 
+#bind old and new observations
+
+sp.obs <- lapply(seq_along(sp.obs), function(x) list(sample.points = rbind(sp.obs[[x]]$sample.points, new.obs[[x]]$sample.points)))
+
+save.image(file = "virt_comm_10spp_AS_newdata.Rdata")
