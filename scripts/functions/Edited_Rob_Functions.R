@@ -73,13 +73,36 @@ fsdm <- function(species, model, climDat, spData, k, write, outPath, #inters = F
       
       if(model == 'me'){
         
-        warning("Maxent ('me') models work best with equal number of presences and absences, matching the number of absences to the number of records")
+        options(java.parameters = "-Xmx3g")
         
-        ab <- ab[sample(x = 1:nrow(ab), size = nrow(pres)),]
+        warning("Maxent ('me') models work best with equal number of presences and absences, matching the number of presences and absences")
+        
+        if(nrow(pres) > nrow(ab)){
+          
+          warning("Number of presences > number of absences, reducing number of presences to match absences")
+          
+          pres <- pres[sample(x = 1:nrow(pres), size = nrow(ab)),]
+          
+          # match the number of absences to presences in the spDat 
+          spDat$Presence <- spDat$Presence[sample(x = 1:nrow(spDat$Presence),
+                                                  size = nrow(spDat$pseudoAbsence)),]
+          
+        } else if(nrow(pres) < nrow(ab)){
+          
+          warning("Number of abesences > number of presences, reducing number of presences to match absences")
+          
+          ab <- ab[sample(x = 1:nrow(ab), size = nrow(pres)),]
+          
+          # match the number of absences to presences in the spDat 
+          spDat$pseudoAbsence <- spDat$pseudoAbsence[sample(x = 1:nrow(spDat$pseudoAbsence),
+                                                            size = nrow(spDat$Presence)),]
+          
+        }
         
         # get a data frame with the lat-lon coordinates
         allDat <- rbind(pres[!names(pres) %in% c("lon", "lat")], ab[!names(ab) %in% c("lon", "lat")])
         allDat_loc <- rbind(pres, ab)
+        
         
         # match the number of absences to presences in the spDat 
         spDat$pseudoAbsence <- spDat$pseudoAbsence[sample(x = 1:nrow(spDat$pseudoAbsence),
@@ -366,6 +389,9 @@ cpa <- function (spdat, species, minYear, maxYear, nAbs, matchPres = FALSE,
     ## if screenRaster is specified, check if any presence or absence points fall outside of the raster extent (i.e. they are NA).
     ## If some data fall outside of the extent of the covariates, drop them, and drop the equivalent number of absences or presences
     ## to ensure they are equal in number.
+    ## if matchPres == FALSE and screenRaster = TRUE then some species might have number Presence > number pseudoabsence
+    ## because absences might happen to fall in NA values
+    ## This is addressed in the fsdm() function
     
     if (!is.null(screenRaster)) {
       
@@ -399,6 +425,128 @@ cpa <- function (spdat, species, minYear, maxYear, nAbs, matchPres = FALSE,
   }
   
   return(out)
+  
+}
+
+
+##### get predictions from the bootstrapped model outputs
+# takes the model object from fsdm()
+# the model used to run it ('lr', 'rf' etc...)
+# and the environmental data to predict onto
+#' 
+#' Takes the bootstrapped models from the fsdm() function above,
+#' the model used to run the function above
+#' and the environmental data you want to predict onto (with the 
+#' same layers as used to run the models above)
+#' and outputs a three item list:
+#' the mean predictions across all of the bootstrapped modes
+#' the min and max quantiles (0.05 and 0.95)
+#' and the range between them
+#' 
+get_predictions <- function(model_outs, 
+                            model, # model that was run to create the models in model_outs
+                            env_data) {
+  
+  # choose the type and index for predict function
+  if(model == 'lr'|model == 'gam'){
+    
+    type <- "response"
+    index <- NULL
+    
+  } else if(model == 'rf'){
+    
+    type <- "prob"
+    index <- 2
+    
+  }
+  
+  # number of bootstraps that were run
+  k = length(model_outs$Bootstrapped_models)
+  
+  ## bootstrapped models
+  print(paste0('#####   predicting from bootstrapped models   #####')) 
+  
+  ## predict from each of the bootstrapped models
+  ## different workflow for lrReg and other methods
+  if(model != 'lrReg') {
+    
+    # predict from each of the bootstrapped models and stack them together
+    boots_out <- raster::stack(lapply(model_outs$Bootstrapped_models, FUN = function(x) predict(env_data, x, type=type, index=index)))
+    
+    ## quantiles
+    print(paste0('#####   getting quantiles   #####'))
+    mean_preds <- calc(boots_out, fun = mean, na.rm = T) # the mean
+    quant_preds <- calc(boots_out, fun = function(x) {quantile(x, probs = c(0.05, 0.95), na.rm = TRUE)}) # get the quantile variation
+    rnge <- quant_preds[[2]]-quant_preds[[1]] # get the range of max - min
+    
+    
+  } else if(model == 'lrReg') { 
+    
+    print(paste0('#####   predicting for lrReg bootstrapped models   #####'))
+    
+    ## convert variables to matrix
+    covsMat <- as.matrix(rasterToPoints(env_data)) # convert variables to matrix
+    
+    ## predict from lrReg model
+    boots <- stack(lapply(model_outs$Bootstrapped_models, FUN = function(x) {
+      
+      pred <- predict(x, covsMat[, 3:ncol(covsMat)], type = "response") # predict from matrix
+      
+      pred <- as.matrix(cbind(covsMat[, 1:2], pred)) # combine predictions with east - norths
+      
+      if (any(is.na(pred[, 3]))) pred <- pred[-which(is.na(pred[,3])), ] # get rid of NAs
+      
+      pred_rast <- rasterize(pred[, 1:2], env_dat[[1]], field = pred[, 3]) # turn into a raster of probabilities
+      
+      ## return predictions
+      return(pred_rast)
+      
+    }))
+    
+    ## check for intercept-only models which are 0.5 probability in all cells
+    uniqueVals <-lapply(1:k,
+                        function(x) { length(cellStats(boots[[x]], unique)) })
+    
+    drop <- which(uniqueVals <= 2) ## i.e. the mean and NA, because with intercept-only models the only values are 0.5 and NA
+    
+    # assign intercept only models an AUC of NULL - important for weighted average later
+    if(any(drop)){
+      
+      model_outs$AUC[drop] <- NA
+      
+      print(paste("Dropping", length(drop), "intercept-only model(s). Intercept-only models are given an AUC value of NA so they can be identified.
+                        Where 1:(k-1) models are intercept only, only the non-intercept models are included in the final average. Where all models are intercept-only,
+                        their predictions are returned but should not be used."))
+      
+    }
+    
+    
+    if (length(drop) == k | length(drop) == 0) {
+      
+      ## quantiles
+      print(paste0('#####   getting quantiles lrReg   #####'))
+      mean_preds <- mean(boots) # where all models are intercept-only, takes the mean to avoid errors later but AUC scores are NA which means they are dropped for final ensembles
+      quant_preds <- calc(boots, fun = function(x) {quantile(x, probs = c(0.05, 0.95), na.rm = TRUE)})
+      rnge <- quant_preds[[2]]-quant_preds[[1]]
+      
+      
+    } else {
+      
+      print(paste0('#####   getting quantiles lrReg   #####'))
+      mean_preds <- mean(boots[[-drop]])
+      quant_preds <- calc(boots[[-drop]], fun = function(x) {quantile(x, probs = c(0.05, 0.95), na.rm = TRUE)})
+      rnge <- quant_preds[[2]]-quant_preds[[1]]
+      
+    }
+    
+    ## if some models were intercept-only then recalculate k (number of models used)
+    k <- k - length(drop)
+    
+  }
+  
+  return(list(mean_predictions = mean_preds,
+              quant_minmax = quant_preds, 
+              quant_range = rnge))
   
 }
 
