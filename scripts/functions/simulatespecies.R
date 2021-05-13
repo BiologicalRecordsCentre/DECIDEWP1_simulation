@@ -34,7 +34,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   community <- list()
   
   #for each species generate observations
-  for (i in n){
+  for (i in 1:n){
   #subset env raster
     my.stack <- env_extent[[sample(1:nlayers(env_extent),size = runif(1,env_min,env_max), replace = FALSE)]]
   #generate a suitability raster
