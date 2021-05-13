@@ -2,8 +2,12 @@
 
 library(raster)
 library(tidyverse)
+library(dismo)
+library(randomForest)
 
 source('scripts/functions/simulatespecies.R')
+source('scripts/functions/reformat_simulated_data.R')
+source('scripts/functions/Edited_Rob_Functions.R')
 
 ### step 1 load data
 
@@ -24,10 +28,38 @@ plot(env_data_cropped)
 
 
 ### step 2 simulate species
-sim_spp <- simulate_species(env_data = env_data_cropped,
-                            n=2,
-                            effort = 'suburban')
+system.time(sim_spp <- simulate_species(env_data = env_data_cropped,
+                                        n=5,
+                                        effort = 'suburban'))
 
-### step 3 convert to cpa() format
 
-t <- sim_spp[[2]]
+### step 3 convert to cpa() format using new function
+presences_df <- reformat_data(sim_spp, year = 2015, species_name = 'Sp')
+head(presences_df)
+
+
+### step 4 run presence absence function
+# get unique list of names
+species_list <- unique(presences_df$species)
+
+pres_abs <- vector('list', length = length(species_list))
+
+for(s in 1:length(species_list)){
+  
+  pres_abs[[s]] <- cpa(spdat = presences_df, species = species_list[s], 
+                       matchPres = FALSE, nAbs = 10000,
+                       minYear = 2000, maxYear = 2017, recThresh = 5,
+                       screenRaster = env_data_cropped)
+  
+}
+
+names(pres_abs) <- species_list
+
+
+### step 5 run model
+sdm_lr <- fsdm(species = species_list[1], model = "rf",
+               climDat = env_data_cropped, spData = pres_abs, knots_gam = 4,
+               k = 4, 
+               write =  F, outPath = "C:/Users/thoval/Documents/Analyses/lr_outs/")
+
+preds <- get_predictions(sdm_lr, 'rf', env_data_cropped)
