@@ -6,10 +6,12 @@ slurm_run_sim_sdm <- function(index){
   library(raster)
   library(virtualspecies)
   library(dismo)
-  library(rgdal)
+  #library(rgdal)
   
   #load output of demo_simulatebaseline.R (could be reduced in size to speed this up)
-  load("virt_comm_10spp.Rdata")
+  dirs <- config::get("LOTUSpaths")
+  
+  load(paste0(dirs$inpath,"virt_comm_10spp.Rdata"))
   
   #' ## 2. Create input data for models
   #' 
@@ -48,13 +50,13 @@ slurm_run_sim_sdm <- function(index){
   #' Initially we can run just the logistic regression models as a test
   
   #source Edited Rob Functions
-  source("Edited_Rob_Functions.R")
+  source(paste0(dirs$inpath,"Edited_Rob_Functions.R"))
   
   #source code from Thomas' workflow
-  source("getpredictions.R")
+  source(paste0(dirs$inpath,"getpredictions.R"))
   
   #read in raster data for env data
-  hbv_y <- raster::stack("hbv_y.grd") 
+  hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
   
   #loop over all 10 species - set up for LOTUS
   
@@ -76,7 +78,7 @@ slurm_run_sim_sdm <- function(index){
   sdm <- fsdm(species = species, model = model,
               climDat = env_data, spData = pa_sets, knots_gam = -1,
               k = k, 
-              write =  TRUE, outPath = "lr_outs/")
+              write =  TRUE, outPath = paste0(dirs$outpath,"lr_outs/"))
   
   #predictions
   
@@ -85,7 +87,7 @@ slurm_run_sim_sdm <- function(index){
   ## save files ##
   species_name <- gsub(pattern = ' ', replacement = '_', species) # get species name without space
   
-  outPath <- paste0(getwd(), "/Outputs/")
+  outPath <- dirs$outpath
   
   # save prediction raster
   writeRaster(x = preds1$mean_predictions, 
@@ -135,7 +137,7 @@ slurm_run_sim_sdm <- function(index){
   
   #' Plot maps
   #' 
-  png(paste0("Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
+  png(paste0(dirs$outpath,"Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
   
   par(mfrow=c(3,2))
   par(mar = c(2,2,2,2))
@@ -155,6 +157,8 @@ pars <- data.frame(index = seq(1:10)) # number of species
 
 library(rslurm)
 
+dirs <- config::get("LOTUSpaths")
+
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          params = pars,
@@ -163,9 +167,8 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial',
                                               time = '23:59:59',
-                                              mem = 20000), ## good to keep the error files in the right directory but don't know where you want to keep them on lotus
-                                              # error = paste0('/gws/nopw/j04/ceh_generic/thoval/DECIDE/SDMs/outputs/', taxa, '/log_files/SDM_Bootstrap_', model,'/SDM_Bootstrap_', model,'-%j-%a.out')),
-                           rscript_path = '',
-                         submit = F)
+                                              mem = 20000),
+                         sh_template = "jasmin_submit_sh.txt",
+                         submit = T)
 
 
