@@ -55,3 +55,22 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   
   return(community)
 }
+
+library(rslurm)
+
+dirs <- config::get("LOTUSpaths")
+
+pars <- data.frame(env_data = "hbv_y.grd",outPath = dirs$outpath, seed = 1000:1001, n_env = 10, n = 20, effort = "suburban")
+
+sjob <- slurm_apply(simulate_species, pars, 
+                    jobname = 'sim_spp',
+                    nodes = nrow(pars), 
+                    cpus_per_node = 1, 
+                    submit = TRUE,
+                    slurm_options = list(partition = "short-serial",
+                                         time = "23:59:59",
+                                         mem = "20000",
+                                         output = "sim_spp_%a.out",
+                                         error = "sim_spp_%a.err"),
+                    sh_template = "jasmin_submit_sh.txt")
+
