@@ -1,46 +1,44 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index){
+slurm_run_sim_sdm <- function(index, spdata){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
   library(virtualspecies)
   library(dismo)
+  library(tidyverse)
   #library(rgdal)
   
   #load output of demo_simulatebaseline.R (could be reduced in size to speed this up)
   dirs <- config::get("LOTUSpaths")
   
-  load(paste0(dirs$inpath,"virt_comm_10spp.Rdata"))
+  #now matches output format of slurm_simulate_species.R - can be changed?
+  community <- readRDS(spdata)[[1]]
   
   #' ## 2. Create input data for models
   #' 
   #' We need to extract the virtual species data we simulated and combine into a community dataset. For each species we can create a new dataset with pseudoabsences generated from the other species in the community
   #' 
   #create a pseudo-absence dataset
-  pa_sets <- list()
+  source(paste0(dirs$inpath,"reformat_simulated_data.R"))
+  source(paste0(dirs$inpath, "Edited_Rob_Functions.R"))
   
-  for(i in 1:length(sp.obs)){
-    #extract occurrence records
-    occs <- sp.obs[[i]]$sample.points[!is.na(sp.obs[[i]]$sample.points$Observed),]
-    abs <- data.frame()
-    for (j in 1:length(sp.obs)){
-      if(j != i) {
-        #observations of other species treated as absences for species of interest
-        abs <- rbind(abs, sp.obs[[j]]$sample.points[!is.na(sp.obs[[j]]$sample.points$Observed),])
-      }
-    }
-    abs$Observed <- 0
-    #check no duplicates
-    pa_data <- rbind(occs, abs)
-    dups <- pa_data[duplicated(pa_data[1:2]),]
-    #always remove duplicates - because occurrences bound first then any absences in same location as occurrences will be removed, also removed any duplicates in pseudo absence data
-    if(nrow(dups) == 0) {next} else {
-      pa_data <- pa_data[!duplicated(pa_data[1:2]),]
-    }
-    pa_sets[[i]] <- list(pa_data = pa_data, Presence = pa_data[pa_data$Observed == 1,1:2], pseudoAbsence = pa_data[pa_data$Observed == 0,1:2])
-    names(pa_sets)[i] <- paste0("Sp",i)
+  presences_df <- reformat_data(community, year = 2015, species_name = 'Sp')
+  head(presences_df)
+  
+  species_list <- unique(presences_df$species)
+  
+  pres_abs <- vector('list', length = length(species_list))
+  
+  for(s in 1:length(species_list)){
+    
+    pres_abs[[s]] <- cpa(spdat = presences_df, species = species_list[s], 
+                         matchPres = FALSE, nAbs = 10000,
+                         minYear = 2000, maxYear = 2017, recThresh = 1)
+    
   }
+  
+  names(pres_abs) <- species_list
   
   #' Pseudoabsence weighting dependent on model, Thomas' code has this accounted for
   
@@ -48,9 +46,6 @@ slurm_run_sim_sdm <- function(index){
   #' 3. Run DECIDE models 
   #' 
   #' Initially we can run just the logistic regression models as a test
-  
-  #source Edited Rob Functions
-  source(paste0(dirs$inpath,"Edited_Rob_Functions.R"))
   
   #source code from Thomas' workflow
   source(paste0(dirs$inpath,"getpredictions.R"))
@@ -64,11 +59,11 @@ slurm_run_sim_sdm <- function(index){
   k = 10
   
   #species index
-  sp_list <- names(pa_sets)
+  sp_list <- names(pres_abs)
   species <- sp_list[index]
   
   #subset envdata for species of interest  
-  env_data <- subset(hbv_y, subset = virt_comm1[[index]]$details$variables)
+  env_data <- subset(hbv_y, subset = community[[index]]$variables)
   
   #set parameters
   model <- "lr"
@@ -76,7 +71,7 @@ slurm_run_sim_sdm <- function(index){
   
   #run model for first species
   sdm <- fsdm(species = species, model = model,
-              climDat = env_data, spData = pa_sets, knots_gam = -1,
+              climDat = env_data, spData = pres_abs, knots_gam = -1,
               k = k, 
               write =  TRUE, outPath = paste0(dirs$outpath,"lr_outs/"))
   
@@ -153,7 +148,7 @@ slurm_run_sim_sdm <- function(index){
 }
 
 ## index file
-pars <- data.frame(index = seq(1:10)) # number of species
+pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.Rds") # number of species
 
 library(rslurm)
 
@@ -167,7 +162,9 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial',
                                               time = '23:59:59',
-                                              mem = 20000),
+                                              mem = 20000,
+                                              output = "sim_sdm_%a.out",
+                                              error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
                          submit = T)
 

@@ -50,7 +50,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     #rename columns of occurrences data
     if(nrow(occs$sample.points) > 0){names(occs$sample.points) <- c("lon", "lat", "Real", "Observed")}
     #store required outputs to list
-    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points)
+    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables)
   }
   
   return(community)
