@@ -3,6 +3,10 @@
 .Rapp.history
 .Rprofile
 
+# specific files
+config.yml
+jasmin_submit_sh.txt
+
 data/
 outputs/
 
