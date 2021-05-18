@@ -136,10 +136,9 @@ slurm_run_sim_sdm <- function(index, spdata){
   
   par(mfrow=c(3,2))
   par(mar = c(2,2,2,2))
-  plot(virt_comm1[[index]], main = "Environmental suitability")
-  plot(pa[[index]]$probability.of.occurrence, main = "Probability of occurrence")
-  plot(pa[[index]]$pa.raster, main = "Presence absence")
-  points(sp.obs[[index]]$sample.points[is.na(sp.obs[[index]]$sample.points$Observed),1:2], pch = 20)
+  plot(community[[index]]$true_prob_occ, main = "Probability of occurrence")
+  plot(community[[index]]$pres_abs, main = "Presence absence")
+  points(community[[index]]$observations[!is.na(community[[index]]$observations$Observed),1:2], pch = 20)
   plot(preds1$mean_predictions, main = "Predicted prob. occ")
   plot(preds1$quant_range, main = "Quantile range of predictions")
   plot(DECIDE_score, main = "DECIDE score")
@@ -148,7 +147,7 @@ slurm_run_sim_sdm <- function(index, spdata){
 }
 
 ## index file
-pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.Rds") # number of species
+pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS") # number of species
 
 library(rslurm)
 
