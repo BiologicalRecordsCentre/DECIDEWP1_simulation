@@ -124,7 +124,7 @@ slurm_run_sim_sdm <- function(index, spdata){
   
   #' Calculate very simple DECIDE score - prediction * quantile range
   
-  DECIDE_score <- preds1$mean_predictions*preds1$quant_range
+  DECIDE_score <- preds1$mean_predictions*sqrt(preds1$quant_range)
   
   writeRaster(x = DECIDE_score, 
               filename = paste0(outPath, model, "_SDMs_", species_name, "_DECIDEscore.grd"),
