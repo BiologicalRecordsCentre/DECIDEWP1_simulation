@@ -44,7 +44,7 @@ lcm_1k <- raster::stack(paste0(out_dir,'data/environmental_data/1km_raster/data/
 #                    'fen_marsh_swamp', 'heather', 'heather_grass', 'bog', 'inland_rock', 'saltwater', 'freshwater',
 #                    'sup_lit_rock', 'sup_lit_sed', 'lit_rock', 'lit_sed', 'saltmarsh', 'urban', 'suburban')
 
-names(lcm_1k) <- names(envdat)[1:21]
+names(lcm_1k) <- names(envdat_cropped)[1:21]
 
 # mask to only GB
 lcm_1k_cropped <- mask(lcm_1k, gb_map)
