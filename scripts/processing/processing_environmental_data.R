@@ -13,7 +13,7 @@ out_dir <-'P:/07543_DECIDE/Data/WP1 modelling/'
 ####   FIRST, crop 100m raster to GB    ####
 
 # read in current file
-envdat <- raster::stack(paste0(out_dir, 'edat_nocorrs_nosea.grd'))
+envdat <- raster::stack(paste0(out_dir, 'data/environmental_data/edat_nocorrs_nosea.grd'))
 
 # download map of GB
 uk_map <- st_as_sf(getData("GADM", country = "GBR", level = 1, path='data/environmental_data/'))
@@ -27,11 +27,11 @@ plot(envdat_cropped[[31]])
 
 # # save raster to shared drive
 # writeRaster(x = envdat_cropped, 
-#             filename = paste0(out_dir, "edat_nocorrs_nosea_cropped.grd"),
+#             filename = paste0(out_dir, "data/environmental_data/final_data/edat_nocorrs_nosea_cropped.grd"),
 #             format = 'raster', overwrite = T)
 
 
-envdat_cropped <- raster::stack(paste0(out_dir, "edat_nocorrs_nosea_cropped.grd"))
+envdat_cropped <- raster::stack(paste0(out_dir, "data/environmental_data/final_data/edat_nocorrs_nosea_cropped.grd"))
 
 
 
@@ -150,7 +150,7 @@ had_bv_cropped <- raster::projectRaster(had_bv_cropped, lcm_1k_cropped, method =
 endCluster()
 
 
-# # store the 1km UK
+# # store the 1km UK had UK variables to make a point to come back to
 # writeRaster(had_bv_cropped,
 #             filename = paste0(out_dir, 'data/environmental_data/had_bv_1km_national_grid.grd'),
 #             format = "raster", overwrite = T)
@@ -173,5 +173,5 @@ gb_1km_nocorr
 
 # # save the new 1km raster
 # writeRaster(gb_1km_nocorr,
-#             filename = paste0(out_dir, 'data/environmental_data/envdata_1km_no_corr.grd'),
+#             filename = paste0(out_dir, 'data/environmental_data/final_data/envdata_1km_no_corr.grd'),
 #             format = "raster", overwrite = T)
