@@ -171,7 +171,7 @@ names(gb_1km)[names(gb_1km) %in% names(envdat)]
 gb_1km_nocorr <- gb_1km[[c(names(gb_1km)[names(gb_1km) %in% names(envdat)])]]
 gb_1km_nocorr
 
-# save the new 1km raster
-writeRaster(gb_1km_nocorr,
-            filename = paste0(out_dir, 'data/environmental_data/envdata_1km_no_corr.grd'),
-            format = "raster", overwrite = T)
+# # save the new 1km raster
+# writeRaster(gb_1km_nocorr,
+#             filename = paste0(out_dir, 'data/environmental_data/envdata_1km_no_corr.grd'),
+#             format = "raster", overwrite = T)
