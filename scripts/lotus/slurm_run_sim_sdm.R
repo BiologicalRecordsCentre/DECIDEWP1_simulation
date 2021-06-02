@@ -140,7 +140,8 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas){
   model_output <- list(species = species_name,
                        model = model,
                        sdm_output = lapply(sdm$Bootstrapped_models, function(x) summary(x)),
-                       number_validations = k)
+                       number_validations = k,
+                       DECIDE_score = DECIDE_score)
   
   save(model_output, file = paste0(outPath, model, "_SDMs_", species_name, 
                                    ".rdata"))

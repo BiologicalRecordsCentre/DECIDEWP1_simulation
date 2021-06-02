@@ -56,3 +56,10 @@ Plots/*
 *.gri
 *.grd
 test_outputs/*
+*.png
+*.html
+*.md
+*.RDS
+*.csv
+*.rds
+config
