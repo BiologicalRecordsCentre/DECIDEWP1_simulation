@@ -1,12 +1,13 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index, spdata, writeRas){
+slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
   library(virtualspecies)
   library(dismo)
   library(tidyverse)
+  library(Rfast)
   #library(rgdal)
   
   #load output of demo_simulatebaseline.R (could be reduced in size to speed this up)
@@ -51,8 +52,10 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas){
   source(paste0(dirs$inpath,"getpredictions_dfsd.R"))
   
   #read in raster data for env data
+  if(GB == TRUE){
+    hbv_y <- raster::stack(paste0(dirs$inpath,"edat_nocorrs_nosea_cropped.grd")) } else if(GB == FALSE){
   hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
-  
+  }
   #read in env data frame
   hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
   
@@ -152,7 +155,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas){
 }
 
 ## index file
-pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", writeRas = FALSE) # number of species
+pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
