@@ -53,11 +53,13 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   
   #read in raster data for env data
   if(GB == TRUE){
-    hbv_y <- raster::stack(paste0(dirs$inpath,"edat_nocorrs_nosea_cropped.grd")) } else if(GB == FALSE){
-  hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
+    hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr.grd"))
+    hbv_df <- read.csv(paste0(dirs$inpath, "hbv_1km_GB.csv"))} else if(GB == FALSE){
+    hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
+    hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
   }
   #read in env data frame
-  hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
+  
   
   #loop over all 10 species - set up for LOTUS
   
@@ -146,7 +148,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
                        number_validations = k,
                        DECIDE_score = DECIDE_score)
   
-  save(model_output, file = paste0(outPath, model, "_SDMs_", species_name, 
+  save(model_output, file = paste0(outPath, model, "_SDMs_GB_", species_name, 
                                    ".rdata"))
   
   
@@ -168,8 +170,8 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          nodes = length(pars$index),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial',
-                                              time = '23:59:59',
-                                              mem = 20000,
+                                              time = '0:59:59',
+                                              mem = 10000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
