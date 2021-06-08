@@ -1,6 +1,6 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
+slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
@@ -8,6 +8,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   library(dismo)
   library(tidyverse)
   library(Rfast)
+  library(mgcv)
   #library(rgdal)
   
   #load output of demo_simulatebaseline.R (could be reduced in size to speed this up)
@@ -24,6 +25,16 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   source(paste0(dirs$inpath,"reformat_simulated_data.R"))
   source(paste0(dirs$inpath, "Edited_Rob_Functions.R"))
   
+  #read in raster data for env data
+  #read in env data frame
+  
+    if(GB == TRUE){
+    hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr.grd"))
+    hbv_df <- read.csv(paste0(dirs$inpath, "hbv_1km_GB.csv"))} else if(GB == FALSE){
+      hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
+      hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
+    }
+  
   presences_df <- reformat_data(community, year = 2015, species_name = 'Sp')
   #head(presences_df)
   
@@ -35,7 +46,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
     
     pres_abs[[s]] <- cpa(spdat = presences_df, species = species_list[s], 
                          matchPres = FALSE, nAbs = 10000,
-                         minYear = 2000, maxYear = 2017, recThresh = 1)
+                         minYear = 2000, maxYear = 2017, recThresh = 1, screenRaster = hbv_y)
     
   }
   
@@ -51,16 +62,6 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   #source code from Thomas' workflow
   source(paste0(dirs$inpath,"getpredictions_dfsd.R"))
   
-  #read in raster data for env data
-  if(GB == TRUE){
-    hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr.grd"))
-    hbv_df <- read.csv(paste0(dirs$inpath, "hbv_1km_GB.csv"))} else if(GB == FALSE){
-    hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
-    hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
-  }
-  #read in env data frame
-  
-  
   #loop over all 10 species - set up for LOTUS
   
   #number of bootstraps
@@ -74,7 +75,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
   env_data <- subset(hbv_y, subset = community[[index]]$variables)
   
   #set parameters
-  model <- "lr"
+  model <- model
   
   
   #run model for first species
@@ -157,7 +158,7 @@ slurm_run_sim_sdm <- function(index, spdata, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = "gam", writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
