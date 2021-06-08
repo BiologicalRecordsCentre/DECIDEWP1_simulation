@@ -9,6 +9,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   library(tidyverse)
   library(Rfast)
   library(mgcv)
+  library(randomForest)
   #library(rgdal)
   
   #load output of demo_simulatebaseline.R (could be reduced in size to speed this up)
@@ -65,7 +66,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   #loop over all 10 species - set up for LOTUS
   
   #number of bootstraps
-  k = 10
+  k = 5
   
   #species index
   sp_list <- names(pres_abs)
@@ -80,7 +81,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   
   #run model for first species
   sdm <- fsdm(species = species, model = model,
-              climDat = env_data, spData = pres_abs, knots_gam = -1,
+              climDat = env_data, spData = pres_abs, knots_gam = 4,
               k = k, 
               write =  TRUE, outPath = paste0(dirs$outpath,"lr_outs/"))
   
@@ -158,7 +159,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = seq(1:20), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = "gam", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = rep(seq(1:4),3), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = c(rep("gam",4), rep("lr",4), rep("rf",4)), writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 

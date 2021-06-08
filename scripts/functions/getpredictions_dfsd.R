@@ -12,6 +12,7 @@ get_predictions_dfsd <- function(model_outs,
     
     type <- "prob"
     index <- 2
+    #env_data <- env_data[!is.na(env_data),]
     
   }
   
@@ -32,7 +33,10 @@ get_predictions_dfsd <- function(model_outs,
     ## quantiles
     print(paste0('#####   getting quantiles   #####'))
     mean_preds <- Reduce("+", boots_out)/length(boots_out) # the mean
-    sd_preds <- rowVars(simplify2array(boots_out), na.rm=TRUE, std = TRUE) 
+    if(model %in% c("lr", "me", "gam")){
+    sd_preds <- rowVars(simplify2array(boots_out), na.rm=TRUE, std = TRUE) } else if(model == "rf"){
+      sd_preds <- rowVars(simplify2array(boots_out)[,2,], na.rm=TRUE, std = TRUE)
+    }
    
     
     
