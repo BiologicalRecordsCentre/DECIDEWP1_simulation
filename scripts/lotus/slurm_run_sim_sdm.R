@@ -31,7 +31,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   
     if(GB == TRUE){
     hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr.grd"))
-    hbv_df <- read.csv(paste0(dirs$inpath, "hbv_1km_GB.csv"))} else if(GB == FALSE){
+    hbv_df <- read.csv(paste0(dirs$inpath, "hbv_df_1km.csv"))} else if(GB == FALSE){
       hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
       hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
     }
@@ -159,7 +159,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = rep(seq(1:4),3), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = c(rep("gam",4), rep("lr",4), rep("rf",4)), writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = 1:4, spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = "rf", writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
