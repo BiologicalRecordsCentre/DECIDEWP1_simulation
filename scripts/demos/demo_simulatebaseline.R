@@ -22,20 +22,24 @@ library(virtualspecies)
 set.seed(1000)#set seed for test runs to check performance
 
 #set path to DECIDE env data (mapped mine to F as issues reading off Wallingford P drive for some reason)
-epath <- "F:Data\\WP1 modelling\\"
-epath <- 'P:/07543_DECIDE/Data/WP1 modelling/'
+#epath <- "F:Data\\WP1 modelling\\"
+#epath <- 'P:/07543_DECIDE/Data/WP1 modelling/'
+epath <- getwd()
 
 # read in data
-env_data <- raster::stack(paste0(epath, "edat_nocorrs_nosea.gri"))
+env_data <- raster::stack(paste0(epath, "/envdata_1km_no_corr.grd"))
 
-# crop to region used by Thomas in model testing using Thomas' code
-ext_h <- extent(matrix(c(-4,53, 0.2,54.5), ncol = 2))
-e <- as(ext_h, "SpatialPolygons")
-sp::proj4string(e) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+# # crop to region used by Thomas in model testing using Thomas' code
+# ext_h <- extent(matrix(c(-4,53, 0.2,54.5), ncol = 2))
+# e <- as(ext_h, "SpatialPolygons")
+# sp::proj4string(e) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+# 
+# e.geo <- sp::spTransform(e, CRS("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs"))
 
-e.geo <- sp::spTransform(e, CRS("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs"))
+#hbv_y <- raster::crop(env_data, e.geo)
 
-hbv_y <- raster::crop(env_data, e.geo)
+#don't crop 1km version
+hbv_y <- env_data
 
 par(mfrow=c(1,1))
 plot(hbv_y[[1]], main = names(hbv_y[[1]]))
@@ -47,7 +51,7 @@ plot(hbv_y[[1]], main = names(hbv_y[[1]]))
 #' Two options given here - either randomly select a random number of layers or use all layers (only useful for testing?)
 
 #random selection of covariates to test in virtual species generation - randomly samples between 5 and 25 layers of the raster stack (i.e. not all species would be based on same set of covariates, or even the same number of layers)
-my.stack <- hbv_y[[sample(1:nlayers(hbv_y),size = runif(1,5,25), replace = FALSE)]]
+my.stack <- hbv_y[[sample(1:nlayers(hbv_y),size = 10, replace = FALSE)]]
 
 #use all PCA layers - test to see how long this takes with PCA generation. Not too slow with all layers on regional subset = no risk to allowing quite a few layers in random generation
 #my.stack = hbv_y
@@ -82,7 +86,7 @@ narrow.species
 
 virt_comm1 <- list()
 for (i in 1:10){
-my.stack <- hbv_y[[sample(1:nlayers(hbv_y),size = runif(1,5,25), replace = FALSE)]]
+my.stack <- hbv_y[[sample(1:nlayers(hbv_y),size = 10, replace = FALSE)]]
 my.pca.species <- generateSpFromPCA(raster.stack = my.stack, sample.points=TRUE, nb.points = 10000)
 virt_comm1[[i]] <- my.pca.species
 }
@@ -177,7 +181,10 @@ suburban <- hbv_y[[21]]
 
 #we can set weights so that the highest suburban areas are 10 times more likely to be sampled than the lowest suburban areas (on the original scale suburban areas were 100 times more likely to be sampled which may be extreme)
 
-sub_weight <- suburban/10
+background <- hbv_y[[23]]/hbv_y[[23]]#set background - means some observations can be made outside of suburban areas
+
+sub_weight <- (suburban/10)+background
+
 
 #' Now we can use this weight to alter our sampling 
 #' 
@@ -200,9 +207,10 @@ prev_vec
 par(mfrow=c(5,2))
 sp.obs <- list()
 for (i in 1:10){
-max_obs <- round(prev_vec[i]*1000)
-sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence only", detection.probability = 0.5, bias = "manual", weights = sub_weight)
+#max_obs <- round(prev_vec[i]*1000)
+max_obs <- 1000
+sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence-absence", detection.probability = 0.5, bias = "manual", weights = sub_weight)
 names(sp.obs[[i]]$sample.points) <- c("lon", "lat", "Real", "Observed")
 }
 
-save.image(file = "virt_comm_10spp.Rdata")
+#save.image(file = "virt_comm_10spp.Rdata")
