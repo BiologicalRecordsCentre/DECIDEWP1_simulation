@@ -211,6 +211,8 @@ for (i in 1:10){
 max_obs <- 1000
 sp.obs[[i]] <- sampleOccurrences(pa[[i]], n = max_obs, type = "presence-absence", detection.probability = 0.5, bias = "manual", weights = sub_weight)
 names(sp.obs[[i]]$sample.points) <- c("lon", "lat", "Real", "Observed")
+sp.obs[[i]]$sample.points <- sp.obs[[i]]$sample.points[sp.obs[[i]]$sample.points$Real == 1,]
+sp.obs[[i]]$sample.points$Observed[sp.obs[[i]]$sample.points$Observed == 0] <- NA
 }
 
 #save.image(file = "virt_comm_10spp.Rdata")
