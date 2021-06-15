@@ -62,14 +62,15 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables)
   }
   
-  return(community)
+  #return(community)
+  save(community, file = paste(outPath,"community",seed, n, "sim.Rdata" , sep = "_"))
 }
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-pars <- data.frame(env_data = "envdata_1km_no_corr.grd",outPath = dirs$outpath, seed = 1000:1001, n_env = 10, n = 20, effort = "suburban", background = "MeanDiRange")
+pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1000:1001, n_env = 10, n = 20, effort = "suburban", background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
                     jobname = 'sim_spp',
