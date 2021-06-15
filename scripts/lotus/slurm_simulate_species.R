@@ -63,7 +63,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   }
   
   #return(community)
-  save(community, file = paste(outPath,"community",seed, n, "sim.Rdata" , sep = "_"))
+  saveRDS(community, file = paste(outPath,"community",seed, n, "sim.rds" , sep = "_"))
 }
 
 library(rslurm)

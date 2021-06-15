@@ -30,7 +30,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   #read in env data frame
   
     if(GB == TRUE){
-    hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr.grd"))
+    hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr_noNA.grd"))
     hbv_df <- read.csv(paste0(dirs$inpath, "hbv_df_1km.csv"))} else if(GB == FALSE){
       hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
       hbv_df <- readRDS(paste0(dirs$inpath, "hbv_df.rds"))
@@ -47,7 +47,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
     
     pres_abs[[s]] <- cpa(spdat = presences_df, species = species_list[s], 
                          matchPres = FALSE, nAbs = 10000,
-                         minYear = 2000, maxYear = 2017, recThresh = 1, screenRaster = hbv_y)
+                         minYear = 2000, maxYear = 2017, recThresh = 1)
     
   }
   
@@ -159,7 +159,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = 1:4, spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/_rslurm_sim_spp/results_0.RDS", model = "rf", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = 1:2, spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.RDS", model = "rf", writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
@@ -171,8 +171,8 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          jobname = 'sdm_simulated_species',
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'short-serial',
-                                              time = '0:59:59',
+                         slurm_options = list(partition = 'test',
+                                              time = '0:15:59',
                                               mem = 10000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
