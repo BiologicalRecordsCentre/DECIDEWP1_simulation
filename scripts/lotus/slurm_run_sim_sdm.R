@@ -16,7 +16,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   dirs <- config::get("LOTUSpaths")
   
   #now matches output format of slurm_simulate_species.R - can be changed?
-  community <- readRDS(spdata)[[1]]
+  community <- readRDS(spdata)
   
   #' ## 2. Create input data for models
   #' 
@@ -150,7 +150,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
                        number_validations = k,
                        DECIDE_score = DECIDE_score)
   
-  save(model_output, file = paste0(outPath, model, "_SDMs_GB_", species_name, 
+  save(model_output, file = paste0(outPath, model, "_SDMs_GBnew_", species_name, 
                                    ".rdata"))
   
   
@@ -159,7 +159,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = 1:2, spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.RDS", model = "rf", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = rep(1:2, 2), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.rds", model = c("lr","lr","gam","gam"), writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
