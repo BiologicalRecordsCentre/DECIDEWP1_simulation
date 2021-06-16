@@ -148,7 +148,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
                        model = model,
                        sdm_output = lapply(sdm$Bootstrapped_models, function(x) summary(x)),
                        number_validations = k,
-                       DECIDE_score = DECIDE_score)
+                       predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
   save(model_output, file = paste0(outPath, model, "_SDMs_GBnew_", species_name, 
                                    ".rdata"))
@@ -159,7 +159,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 }
 
 ## index file
-pars <- data.frame(index = rep(1:2, 2), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.rds", model = c("lr","lr","gam","gam"), writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = rep(1:2, 3), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.rds", model = c("lr","lr","gam","gam", "rf", "rf"), writeRas = FALSE, GB = TRUE) # number of species
 
 library(rslurm)
 
@@ -172,8 +172,8 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          nodes = length(pars$index),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'test',
-                                              time = '0:15:59',
-                                              mem = 10000,
+                                              time = '0:04:59',
+                                              mem = 5000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
