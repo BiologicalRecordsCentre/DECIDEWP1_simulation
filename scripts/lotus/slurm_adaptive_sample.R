@@ -5,9 +5,10 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
   
+  #import simulated community data
   community <- readRDS(community_file)
   
-  
+  #import env_data if specified
   if(!is.null(env_data)){
   env <- raster::stack(env_data)
   
@@ -30,18 +31,12 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster(background)} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", background)) {eff_layer <- subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", background)) {eff_layer <- raster(effort)} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster(effort)} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
   
-  
-  #load layer describing existing spatial sampling effort
-  effort <- raster(effort_layer)
-  #adjust by weights
-  eff
-  
-  #calculate existing effort weights
+  eff_df <- as.data.frame(eff_weights, xy=TRUE, na.rm=TRUE)
   
   #get species list from length of community list
   species_list <- vector()
@@ -112,6 +107,6 @@ community_file <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_
 sdm_path <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/"
 model = c("rf", "gam", "lr")
 effort <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/butterfly_1km_effort_layer.grd"
-background <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/moth_1km_effort_layer.grd"
+background <- "AnnualTemp"
 env_data <- "envdata_1km_no_corr_noNA.grd"
-weight_adj <- 10
+weight_adj <- 500
