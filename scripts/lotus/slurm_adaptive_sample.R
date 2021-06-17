@@ -82,11 +82,62 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   community_scores <- Reduce(`+`, community_preds)/length(community_preds)
   
-  if (method == "none"){}
+  if (method == "none"){
+    cell_weights <- eff_df$layer/sum(eff_df$layer, na.rm=TRUE)
+    #assign NA values the average weight
+    cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+    #sample new locations according to cell weights
+    new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights)
+    new_coords <- community_scores[new_locs, 1:2]
+  }
   
-  if (method == "uncertainty"){}
+  if (method == "uncertainty"){    #merge with existing sampling bias if uptake isn't NULL
+    if(is.null(uptake)){
+      cell_weights <- community_scores$sd/sum(community_scores$sd, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
+    }
+    if(!is.null(uptake)){
+      #combine effort and score dataframes
+      comb_df <- merge(eff_df, community_scores, by = c("x", "y"))
+      #standardise both effort and score to 0 to 1
+      comb_df[,3:6] <- apply(comb_df[,3:6],2,FUN = function(x) {x/max(x, na.rm=TRUE)})
+      comb_df$comb_weight <- (comb_df$layer*(1-uptake))+(comb_df$sd*uptake)
+      cell_weights <- comb_df$comb_weight/sum(comb_df$comb_weight, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
+    }}
   
-  if (method == "prevalence"){}
+  if (method == "prevalence"){
+    #merge with existing sampling bias if uptake isn't NULL
+    if(is.null(uptake)){
+      cell_weights <- community_scores$mean/sum(community_scores$mean, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
+    }
+    if(!is.null(uptake)){
+      #combine effort and score dataframes
+      comb_df <- merge(eff_df, community_scores, by = c("x", "y"))
+      #standardise both effort and score to 0 to 1
+      comb_df[,3:6] <- apply(comb_df[,3:6],2,FUN = function(x) {x/max(x, na.rm=TRUE)})
+      comb_df$comb_weight <- (comb_df$layer*(1-uptake))+(comb_df$mean*uptake)
+      cell_weights <- comb_df$comb_weight/sum(comb_df$comb_weight, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
+    }
+  }
   
   if (method == "unc_plus_prev"){
     #merge with existing sampling bias if uptake isn't NULL
@@ -104,10 +155,21 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
       #standardise both effort and score to 0 to 1
       comb_df[,3:6] <- apply(comb_df[,3:6],2,FUN = function(x) {x/max(x, na.rm=TRUE)})
       comb_df$comb_weight <- (comb_df$layer*(1-uptake))+(comb_df$DECIDE_score*uptake)
+      cell_weights <- comb_df$comb_weight/sum(comb_df$comb_weight, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
     }
   }
   
-  if (method == "coverage"){}
+  if (method == "coverage"){
+    eff_zero <- as.data.frame(eff_layer, xy=TRUE)
+    empty_cells <- eff_zero[eff_zero$butterfly_1km_effort == 0 & !is.na(eff_zero$butterfly_1km_effort),]#1 because we added 1 to the eff_layer to allow sampling in previously unvisited squares
+    new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
+    new_coords <- empty_cells[new_locs,1:2]
+  }
   
 }
 
