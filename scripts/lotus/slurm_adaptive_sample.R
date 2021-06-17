@@ -1,11 +1,47 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data = NULL, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
   
   community <- readRDS(community_file)
+  
+  
+  if(!is.null(env_data)){
+  env <- raster::stack(env_data)
+  
+  #crop to extent if specified
+  if(!is.null(extent)){
+    e <- as(extent, "SpatialPolygons")
+    sp::proj4string(e) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+    
+    e.geo <- sp::spTransform(e, CRS("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs"))
+    
+    env_extent <- raster::crop(env, e.geo)
+    
+  } else {env_extent <- env}
+  
+  }
+  
+  #set background if given, can indicate a layer in env_data or be a filepath to a raster
+  if(is.numeric(background)){
+    bg_layer <- env_extent[[background]]
+  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster(background)} else {bg_layer <- NULL}
+  
+  #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", background)) {eff_layer <- subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", background)) {eff_layer <- raster(effort)} else  {eff_layer <- NULL}
+  
+  if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
+    eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
+  
+  
+  #load layer describing existing spatial sampling effort
+  effort <- raster(effort_layer)
+  #adjust by weights
+  eff
+  
+  #calculate existing effort weights
   
   #get species list from length of community list
   species_list <- vector()
@@ -75,3 +111,7 @@ slurm_adaptive_sample <- function(community_file, sdm_path, model = c("rf", "gam
 community_file <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/_community_1000_20_sim.rds"
 sdm_path <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/"
 model = c("rf", "gam", "lr")
+effort <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/butterfly_1km_effort_layer.grd"
+background <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/moth_1km_effort_layer.grd"
+env_data <- "envdata_1km_no_corr_noNA.grd"
+weight_adj <- 10
