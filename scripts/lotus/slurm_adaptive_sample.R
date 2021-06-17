@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data = NULL, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data = NULL, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
@@ -89,12 +89,22 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   if (method == "prevalence"){}
   
   if (method == "unc_plus_prev"){
-    cell_weights <- community_scores$DECIDE_score/sum(community_scores$DECIDE_score, na.rm=TRUE)
-    #assign NA values the average weight
-    cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
-    #sample new locations according to cell weights
-    new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights)
-    new_coords <- community_scores[new_locs, 1:2]
+    #merge with existing sampling bias if uptake isn't NULL
+    if(is.null(uptake)){
+      cell_weights <- community_scores$DECIDE_score/sum(community_scores$DECIDE_score, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights)
+      new_coords <- community_scores[new_locs, 1:2]
+    }
+    if(!is.null(uptake)){
+      #combine effort and score dataframes
+      comb_df <- merge(eff_df, community_scores, by = c("x", "y"))
+      #standardise both effort and score to 0 to 1
+      comb_df[,3:6] <- apply(comb_df[,3:6],2,FUN = function(x) {x/max(x, na.rm=TRUE)})
+      comb_df$comb_weight <- (comb_df$layer*(1-uptake))+(comb_df$DECIDE_score*uptake)
+    }
   }
   
   if (method == "coverage"){}
