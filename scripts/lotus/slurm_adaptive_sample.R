@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data = NULL, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
@@ -171,6 +171,28 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     new_coords <- empty_cells[new_locs,1:2]
   }
   
+  
+  
+  ##sample new observations from coordinates
+  
+  
+  new.obs <- list()
+  for (i in 1:length(community)){
+    observations <- data.frame(coordinates(new_coords)[,1:2])
+    observations$Real <- extract(community[[i]]$pres_abs, observations)
+    observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
+    observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.5))
+    observations <- observations[!is.na(observations$x),]#remove missing locs
+    observations[observations == 0] <- NA
+    names(observations) <- c("lon", "lat", "Real", "Observed")
+    new.obs[[i]] <- list()
+    new.obs[[i]]$observations <- observations
+  }
+  
+  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations)))
+  
+  return(community_AS)
+  
 }
 
 
@@ -180,5 +202,11 @@ sdm_path <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/"
 model = c("rf", "gam", "lr")
 effort <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/butterfly_1km_effort_layer.grd"
 background <- "AnnualTemp"
-env_data <- "envdata_1km_no_corr_noNA.grd"
+env_data <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/envdata_1km_no_corr_noNA.grd"
 weight_adj <- 500
+method <- "none"
+n <- 100
+extent <- NULL
+
+
+att1 <- slurm_adaptive_sample(community_file = community_file, sdm_path = sdm_path, model = model, effort = effort, background = background, env_data = env_data, weight_adj = weight_adj, method = method, n = n)
