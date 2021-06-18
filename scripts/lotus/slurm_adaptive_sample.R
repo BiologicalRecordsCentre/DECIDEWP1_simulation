@@ -28,15 +28,15 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   #set background if given, can indicate a layer in env_data or be a filepath to a raster
   if(is.numeric(background)){
     bg_layer <- env_extent[[background]]
-  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster(background)} else {bg_layer <- NULL}
+  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster(effort)} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
   
-  eff_df <- as.data.frame(eff_weights, xy=TRUE, na.rm=TRUE)
+  eff_df <- raster::as.data.frame(eff_weights, xy=TRUE, na.rm=TRUE)
   
   #get species list from length of community list
   species_list <- vector()
@@ -178,8 +178,8 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   new.obs <- list()
   for (i in 1:length(community)){
-    observations <- data.frame(coordinates(new_coords)[,1:2])
-    observations$Real <- extract(community[[i]]$pres_abs, observations)
+    observations <- data.frame(sp::coordinates(new_coords)[,1:2])
+    observations$Real <- raster::extract(community[[i]]$pres_abs, observations)
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
     observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.5))
     observations <- observations[!is.na(observations$x),]#remove missing locs
@@ -189,7 +189,7 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     new.obs[[i]]$observations <- observations
   }
   
-  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations)))
+  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables))
   
   return(community_AS)
   
@@ -204,7 +204,7 @@ effort <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/butte
 background <- "AnnualTemp"
 env_data <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/envdata_1km_no_corr_noNA.grd"
 weight_adj <- 500
-method <- "none"
+method <- "uncertainty"
 n <- 100
 extent <- NULL
 
