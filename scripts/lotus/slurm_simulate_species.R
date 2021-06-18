@@ -63,14 +63,21 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   }
   
   #return(community)
-  saveRDS(community, file = paste(outPath,"community",seed, n, "sim.rds" , sep = "_"))
+  
+  community_name <- paste0("community_",seed,"_", n, "_sim")
+  
+  if(!dir.exists(paste0(outPath, community_name,"/"))){
+    dir.create(paste0(outPath, community_name,"/"))
+  }
+  
+  saveRDS(community, file = paste0(outPath,community_name,"/", community_name, ".rds"))
 }
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1000:1001, n_env = 10, n = 20, effort = "suburban", background = "MeanDiRange")
+pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1:2, n_env = 10, n = 50, effort = "suburban", background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
                     jobname = 'sim_spp',
