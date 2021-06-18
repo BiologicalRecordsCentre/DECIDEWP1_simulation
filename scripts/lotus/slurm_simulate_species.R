@@ -1,4 +1,4 @@
-simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 10, background = NULL){
+simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL){
   
   library(raster)
   library(virtualspecies)
@@ -25,16 +25,17 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   #decide on number of layers to use or range of layers from which to select, if no limit given use all layers in raster
   if(is.null(n_env)){env_min = nlayers(env_extent); env_max = nlayers(env_extent)} else if (length(n_env) == 1) {env_min = n_env; env_max = n_env} else if(length(n_env) == 2) {env_min = n_env[1]; env_max = n_env[2]} else if (length(n_env) > 2) {stop("n_env greater than 2: Input either a single number or a range from which to select the number of environmental layers to use in species generation")}
   
-  #set background if given
+  #set background if given, can indicate a layer in env_data or be a filepath to a raster
   if(is.numeric(background)){
     bg_layer <- env_extent[[background]]
-  } else if (is.character(background)) {bg_layer <- subset(env_extent, background)} else {bg_layer <- NULL}
+  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort)) {eff_layer <- subset(env_extent,effort)} else {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
+  
   
   community <- list()
   
@@ -77,7 +78,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1:2, n_env = 10, n = 50, effort = "suburban", background = "MeanDiRange")
+pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1:2, n_env = 10, n = 50, effort = "butterfly_1km_effort_layer.grd", background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
                     jobname = 'sim_spp',
