@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL, outPath){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, outPath){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
@@ -73,12 +73,14 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     mod_average <- Reduce(`+`, model_outputs) / length(model_outputs)
     
     #store only the model average for now - could edit to store the individual model outputs if needed
-    community_preds[[j]] <- mod_average
+    if(is.null(nrow(mod_average))){community_preds[[j]] <- NULL} else { community_preds[[j]] <- mod_average}
     names(community_preds)[j] <- species
   
   }
   
-  #average across all species in community to obtain a single prevalence, uncertainty and DECIDE score 
+  #average across all species in community (which can be modelled) to obtain a single prevalence, uncertainty and DECIDE score
+  
+  community_preds <- Filter(length, community_preds)
   
   community_scores <- Reduce(`+`, community_preds)/length(community_preds)
   
@@ -199,9 +201,9 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
 
 library(rslurm)
 
-config::get("LOTUSpaths_AS")
+dirs <- config::get("LOTUSpaths_AS")
 
-pars <- data.frame(community_file = paste0(dirs$commpath,"community_1_50_sim/community_1_50_sim.rds"), sdm_path = paste0(dirs$sdmpath,"community_1_50_sim/"), model = c("rf", "gam", "lr"), effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), background = "AnnualTemp", env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), weight_adj = rep(1,3), method = "uncertainty", n = 100, outPath = paste0(dirs$outpath,"community_1_50_sim/"))
+pars <- data.frame(community_file = paste0(dirs$commpath,"community_1_50_sim/community_1_50_sim.rds"), sdm_path = paste0(dirs$sdmpath,"community_1_50_sim/"), effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), background = "AnnualTemp", env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), weight_adj = 1, method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, outPath = paste0(dirs$outpath,"community_1_50_sim/"))
 
 
 sjob <- slurm_apply(slurm_adaptive_sample, pars, 
@@ -210,7 +212,7 @@ sjob <- slurm_apply(slurm_adaptive_sample, pars,
                     cpus_per_node = 1, 
                     submit = TRUE,
                     slurm_options = list(partition = "test",
-                                         time = "0:04:59",
+                                         time = "00:59:59",
                                          mem = "20000",
                                          output = "sim_spp_%a.out",
                                          error = "sim_spp_%a.err"),
