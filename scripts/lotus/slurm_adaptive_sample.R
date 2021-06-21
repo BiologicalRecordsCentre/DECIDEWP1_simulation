@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, uptake = NULL, outPath){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
   models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
@@ -191,22 +191,29 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables))
   
-  return(community_AS)
+  community_name <- strsplit(basename(community_file),"\\.")[[1]][1]
+  
+  saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
   
 }
 
+library(rslurm)
+
+config::get("LOTUSpaths_AS")
+
+pars <- data.frame(community_file = paste0(dirs$commpath,"community_1_50_sim/community_1_50_sim.rds"), sdm_path = paste0(dirs$sdmpath,"community_1_50_sim/"), model = c("rf", "gam", "lr"), effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), background = "AnnualTemp", env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), weight_adj = rep(1,3), method = "uncertainty", n = 100, outPath = paste0(dirs$outpath,"community_1_50_sim/"))
 
 
-community_file <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/_community_1000_20_sim.rds"
-sdm_path <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/GB_test/"
-model = c("rf", "gam", "lr")
-effort <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Effort layers/butterfly_1km_effort_layer.grd"
-background <- "AnnualTemp"
-env_data <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/envdata_1km_no_corr_noNA.grd"
-weight_adj <- 500
-method <- "uncertainty"
-n <- 100
-extent <- NULL
+sjob <- slurm_apply(slurm_adaptive_sample, pars, 
+                    jobname = 'adaptive_samp',
+                    nodes = nrow(pars), 
+                    cpus_per_node = 1, 
+                    submit = TRUE,
+                    slurm_options = list(partition = "test",
+                                         time = "0:04:59",
+                                         mem = "20000",
+                                         output = "sim_spp_%a.out",
+                                         error = "sim_spp_%a.err"),
+                    sh_template = "jasmin_submit_sh.txt")
 
 
-att1 <- slurm_adaptive_sample(community_file = community_file, sdm_path = sdm_path, model = model, effort = effort, background = background, env_data = env_data, weight_adj = weight_adj, method = method, n = n)

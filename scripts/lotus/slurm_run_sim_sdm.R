@@ -1,6 +1,6 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
+slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
@@ -66,7 +66,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   #loop over all 10 species - set up for LOTUS
   
   #number of bootstraps
-  k = 5
+  k = 10
   
   #species index
   sp_list <- names(pres_abs)
@@ -152,7 +152,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
   
   community_name <- strsplit(basename(spdata),"\\.")[[1]][1]
   
-  save(model_output, file = paste0(outPath, community_name,"/", model, "_SDMs_GBnew_", species_name, 
+  save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type,
                                    ".rdata"))
   
   
@@ -160,12 +160,14 @@ slurm_run_sim_sdm <- function(index, spdata, model, writeRas, GB){
 
 }
 
-## index file
-pars <- data.frame(index = rep(3:20, 3), spdata = "/gws/nopw/j04/ceh_generic/susjar/DECIDE/Outputs/communities_1km/_community_1000_20_sim.rds", model = c(rep("lr", 18), rep("gam",18), rep("rf", 18)), writeRas = FALSE, GB = TRUE) # number of species
-
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
+
+## index file
+pars <- data.frame(index = rep(3, 1), spdata = paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim.rds"), model = c(rep("lr", 0), rep("gam",0), rep("rf", 1)), data_type = "initial", writeRas = FALSE, GB = TRUE) # number of species
+
+
 
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
@@ -173,9 +175,9 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          jobname = 'sdm_simulated_species',
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'short-serial',
-                                              time = '0:04:59',
-                                              mem = 5000,
+                         slurm_options = list(partition = 'test',
+                                              time = '0:09:59',
+                                              mem = 8000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
