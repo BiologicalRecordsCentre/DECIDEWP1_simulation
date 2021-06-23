@@ -2,8 +2,8 @@
 
 slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, outPath){
   
-  #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders)
-  models <- list.files(path = sdm_path, pattern = paste(model, sep = "", collapse = "|"))
+  #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
+  models <- list.files(path = sdm_path, pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
   
   #import simulated community data
   community <- readRDS(community_file)
@@ -73,8 +73,8 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     mod_average <- Reduce(`+`, model_outputs) / length(model_outputs)
     
     #store only the model average for now - could edit to store the individual model outputs if needed
-    if(is.null(nrow(mod_average))){community_preds[[j]] <- NULL} else { community_preds[[j]] <- mod_average}
-    names(community_preds)[j] <- species
+    if(is.null(nrow(mod_average))){community_preds[[j]] <- NULL} else { community_preds[[j]] <- mod_average; names(community_preds)[j] <- species}
+    
   
   }
   
@@ -167,7 +167,7 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   }
   
   if (method == "coverage"){
-    eff_zero <- as.data.frame(eff_layer, xy=TRUE)
+    eff_zero <- raster::as.data.frame(eff_layer, xy=TRUE)
     empty_cells <- eff_zero[eff_zero$butterfly_1km_effort == 0 & !is.na(eff_zero$butterfly_1km_effort),]#1 because we added 1 to the eff_layer to allow sampling in previously unvisited squares
     new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
     new_coords <- empty_cells[new_locs,1:2]
@@ -191,13 +191,15 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     new.obs[[i]]$observations <- observations
   }
   
-  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables))
+  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables, AS_method = method))
   
   community_name <- strsplit(basename(community_file),"\\.")[[1]][1]
   
   saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
   
 }
+
+source("slurm_adaptive_sample_function.R")
 
 library(rslurm)
 

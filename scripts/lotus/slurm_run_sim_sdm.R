@@ -96,7 +96,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   
   #' Calculate very simple DECIDE score - prediction * standard deviation
   
-  DECIDE_score <- preds1$mean_predictions*sqrt(preds1$sd_predictions)
+  DECIDE_score <- preds1$mean_predictions*preds1$sd_predictions
   
   
   if(writeRas == TRUE){
@@ -150,7 +150,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
                        number_validations = k,
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
-  community_name <- strsplit(basename(spdata),"\\.")[[1]][1]
+  community_name <- strsplit(spdata,"\\/")[[1]][10]
   
   save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type,
                                    ".rdata"))
@@ -165,7 +165,7 @@ library(rslurm)
 dirs <- config::get("LOTUSpaths")
 
 ## index file
-pars <- data.frame(index = rep(3, 1), spdata = paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim.rds"), model = c(rep("lr", 0), rep("gam",0), rep("rf", 1)), data_type = "initial", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = rep(4:50, 3), spdata = paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim.rds"), model = c(rep("lr", 47), rep("gam",47), rep("rf", 47)), data_type = "initial", writeRas = FALSE, GB = TRUE) # number of species
 
 
 
@@ -175,9 +175,9 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          jobname = 'sdm_simulated_species',
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'test',
-                                              time = '0:09:59',
-                                              mem = 8000,
+                         slurm_options = list(partition = 'short-serial',
+                                              time = '0:06:59',
+                                              mem = 4000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
