@@ -143,14 +143,15 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   # remove data from model output
   sdm$Data <- NULL
   
+  community_name <- strsplit(spdata,"\\/")[[1]][10]
+  
   # output of model to store
-  model_output <- list(species = species_name,
+  model_output <- list(community = community_name, 
+                       species = species_name,
                        model = model,
                        sdm_output = lapply(sdm$Bootstrapped_models, function(x) summary(x)),
                        number_validations = k,
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
-  
-  community_name <- strsplit(spdata,"\\/")[[1]][10]
   
   save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type,
                                    ".rdata"))
@@ -165,9 +166,10 @@ library(rslurm)
 dirs <- config::get("LOTUSpaths")
 
 ## index file
-pars <- data.frame(index = rep(4:50, 3), spdata = paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim.rds"), model = c(rep("lr", 47), rep("gam",47), rep("rf", 47)), data_type = "initial", writeRas = FALSE, GB = TRUE) # number of species
+pars <- data.frame(index = rep(1:50, 15), spdata = c(rep(paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim_AS_unc_plus_prev.rds"),150),rep(paste0(dirs$commpath, "community_1_50_sim/community_1_50_sim_AS_coverage.rds"),150)), model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_prev",150), rep("AS_coverage",150)), writeRas = FALSE, GB = TRUE) # number of species
 
-
+#test with subset of runs
+pars <- pars[-c(1,78,103,166,208,294,315,352,422, 484,517, 569, 646,675, 735),]
 
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
@@ -175,9 +177,9 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          jobname = 'sdm_simulated_species',
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'short-serial',
+                         slurm_options = list(partition = 'short-serial-4hr',
                                               time = '0:06:59',
-                                              mem = 4000,
+                                              mem = 3000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),
                          sh_template = "jasmin_submit_sh.txt",
