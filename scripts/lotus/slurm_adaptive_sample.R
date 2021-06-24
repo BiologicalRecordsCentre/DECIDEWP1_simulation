@@ -50,13 +50,13 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
     species <- species_list[j]
     #get model outputs for this species
-    models_to_read <- grep(species, models)
+    models_to_read <- grep(paste0(species,"_"), models)
   
     #load outputs into list and extract prediction table
     model_outputs <- list()
     idx <- 1
     for (k in models_to_read){
-      load(paste0(sdm_path, models[k]))
+      try(load(paste0(sdm_path, models[k])))
       model_type <- model_output$model
       if (model_type != "rf"){
         model_preds <- model_output$predictions}
@@ -214,8 +214,8 @@ sjob <- slurm_apply(slurm_adaptive_sample, pars,
                     cpus_per_node = 1, 
                     submit = TRUE,
                     slurm_options = list(partition = "test",
-                                         time = "00:59:59",
-                                         mem = "20000",
+                                         time = "00:04:59",
+                                         mem = "3000",
                                          output = "sim_spp_%a.out",
                                          error = "sim_spp_%a.err"),
                     sh_template = "jasmin_submit_sh.txt")
