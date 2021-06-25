@@ -63,16 +63,14 @@ slurm_evaluate <- function(community_folder, model, method){
       
     #extract basic metrics
     
-    true_prob_occ <- raster::as.data.frame(community[[j]]$true_prob_occ, xy=TRUE)
-    true_pa <- raster::as.data.frame(community[[j]]$pres_abs, xy=TRUE)
-    prediction <- mod_average
     
-    eval_df <- Reduce(function(df1, df2) merge(df1, df2, by = c("x", "y")), list(true_prob_occ, true_pa, prediction))
-    names(eval_df) <- c("x", "y", "true_prob_occ", "true_pa", "prediction")
+    prediction <- raster::rasterFromXYZ(mod_average)
+    true_prob_occ <- raster::crop(community[[j]]$true_prob_occ, prediction)
+    true_pa <- raster::crop(community[[j]]$pres_abs, prediction)
     
-    mse <- mean((eval_df$true_prob_occ-eval_df$prediction)^2, na.rm=TRUE)
-    corr <- cor(eval_df$true_prob_occ, eval_df$prediction)
-    auc <- as.numeric(pROC::auc(eval_df$true_pa, eval_df$prediction))
+    mse <- mean((getValues(true_prob_occ)-getValues(prediction))^2, na.rm=TRUE)
+    corr <- cor(getValues(true_prob_occ), getValues(prediction), use = "pairwise.complete")
+    auc <- as.numeric(pROC::auc(getValues(true_pa), getValues(prediction), quiet = TRUE))
     
     method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, species = species))
   
