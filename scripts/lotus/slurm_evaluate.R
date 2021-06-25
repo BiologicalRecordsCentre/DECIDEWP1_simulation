@@ -1,8 +1,10 @@
 slurm_evaluate <- function(community_folder, model, method){
   
-  #read in all model files except initial for each species
+  #read in all model files for each species
   
-  models <- list.files(path = community_folder, pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*AS.*.rdata"))
+  model_types <- sapply(strsplit(model,","), function(x) trimws(x))
+  
+  models <- list.files(path = community_folder, pattern = paste0("(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
   
   #identify community file based on naming structure
   community_file <- paste0(community_folder, basename(community_folder),".rds")
@@ -16,15 +18,23 @@ slurm_evaluate <- function(community_folder, model, method){
   species_list <- vector()
   for (i in 1:length(community)){species_list[i] <- paste0("Sp",i)}
   
+  #get method types
+  
+  method_types <- as.character(sapply(strsplit(method,","), function(x) trimws(x)))
+  
+  eval_list <- list()
+  
   #loop over species
   for (j in 1:length(species_list)){
     
     species <- species_list[j]
     
     method_eval <- data.frame()
-    for(k in method){
+    for(k in method_types){
     
-    models_to_read <- grep(paste0(species, "_AS_*(", k, ")"), models)
+      if(k == "initial"){
+        models_to_read <- grep(paste0(species, "_", k), models)
+      } else {models_to_read <- grep(paste0(species, "_AS_*(", k, ")"), models)}
     
     if(length(models_to_read > 0)){
       idx <- 1
@@ -59,21 +69,54 @@ slurm_evaluate <- function(community_folder, model, method){
     
     mse <- mean((eval_df$true_prob_occ-eval_df$prediction)^2, na.rm=TRUE)
     corr <- cor(eval_df$true_prob_occ, eval_df$prediction)
+    auc <- as.numeric(pROC::auc(eval_df$true_pa, eval_df$prediction))
     
-    method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr))
+    method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, species = species))
+  
       }
     }#method loop
     
+    if(nrow(method_eval) >0 ){
+    eval_list[[j]] <- method_eval} else {eval_list[[j]] <- NULL}
     
   }#species loop
   
   
+  eval_table <- do.call("rbind", eval_list)
   
+  #extract prevalence values for all species - calculate if not in community object
+  if(is.null(community[[1]]$prevalence)){
+    prevalence <- vector()
+    for (j in 1:length(species_list)){
+      prevalence[j] <- sum(getValues(community[[j]]$pres_abs), na.rm=TRUE)/nrow(mod_average)
+    }
+  } else {prevalence <- sapply(community, function(x) x$prevalence)}
   
+  eval_table$prevalence <- prevalence[as.numeric(sapply(strsplit(eval_table$species, split = "Sp"), function(x) x[[2]]))]
+  
+  return(eval_table)
   
 } #end function
 
 
-community_folder <- "N:/CEH/DECIDE/WP1_simulation/DECIDEWP1_simulation/Outputs/community_1_50_sim/"
-model = c("rf", "gam", "lr")
-method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage")
+library(rslurm)
+
+dirs <- config::get("LOTUSpaths")
+
+## index file
+pars <- data.frame(community_folder = paste0(dirs$commpath, "community_1_50_sim/"), model = "rf, gam, lr", method = "initial, none, uncertainty, prevalence, unc_plus_prev, coverage")
+
+#### slurm apply call
+sdm_slurm <- slurm_apply(slurm_evaluate,
+                         params = pars,
+                         jobname = 'evaluate',
+                         nodes = length(pars$community_folder),
+                         cpus_per_node = 1,
+                         slurm_options = list(partition = 'test',
+                                              time = '0:14:59',
+                                              mem = 3000,
+                                              output = "sim_eval_%a.out",
+                                              error = "sim_eval_%a.err"),
+                         sh_template = "jasmin_submit_sh.txt",
+                         submit = T)
+
