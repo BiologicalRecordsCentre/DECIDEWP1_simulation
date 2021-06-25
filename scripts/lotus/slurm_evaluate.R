@@ -12,6 +12,9 @@ slurm_evaluate <- function(community_folder, model, method){
   #read in community data
   community <- readRDS(community_file)
   
+  #set community name
+  community_name <- basename(community_folder)
+  
   #average across model types for each species and method combination
   
   #get species list from length of community list
@@ -94,7 +97,9 @@ slurm_evaluate <- function(community_folder, model, method){
   
   eval_table$prevalence <- prevalence[as.numeric(sapply(strsplit(eval_table$species, split = "Sp"), function(x) x[[2]]))]
   
-  return(eval_table)
+  eval_table$community <- community_name
+  
+  write.csv(eval_table, file = paste0(community_folder, community_name, "_evaluation_table.csv"))
   
 } #end function
 
@@ -113,7 +118,7 @@ sdm_slurm <- slurm_apply(slurm_evaluate,
                          nodes = length(pars$community_folder),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'test',
-                                              time = '0:14:59',
+                                              time = '0:59:59',
                                               mem = 3000,
                                               output = "sim_eval_%a.out",
                                               error = "sim_eval_%a.err"),
