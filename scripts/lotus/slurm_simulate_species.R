@@ -60,7 +60,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     occs$sample.points <- occs$sample.points[occs$sample.points$Real == 1,]
     occs$sample.points$Observed[occs$sample.points$Observed == 0] <- NA
     #store required outputs to list
-    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables)
+    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables, prevalence = prevalence)
   }
   
   #return(community)

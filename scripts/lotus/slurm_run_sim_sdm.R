@@ -131,9 +131,9 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   }
   
   # write AUC to file for easy-access
-  write.csv(x = data.frame(raw_AUC = sdm$AUC,
-                           meanAUC = sdm$meanAUC),
-            file = paste0(outPath, model, "_SDMs_", species_name, "_AUC_values.csv"))
+  #write.csv(x = data.frame(raw_AUC = sdm$AUC,
+  #                         meanAUC = sdm$meanAUC),
+  #          file = paste0(outPath, model, "_SDMs_", species_name, "_AUC_values.csv"))
   
   # write data to file too
   #write.csv(x = sdm$Data,
@@ -151,6 +151,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
                        model = model,
                        sdm_output = lapply(sdm$Bootstrapped_models, function(x) summary(x)),
                        number_validations = k,
+                       meanAUC = sdm$meanAUC,
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
   save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type,
