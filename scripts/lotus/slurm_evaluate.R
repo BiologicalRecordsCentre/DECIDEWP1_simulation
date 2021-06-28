@@ -43,9 +43,11 @@ slurm_evaluate <- function(community_folder, model, method){
       idx <- 1
       model_outputs <- list()
       for (l in models_to_read){
+        print(models[l])
         model_output <- NULL
         try(load(paste0(community_folder, models[l])))
         model_type <- model_output$model
+        if(is.null(model_type)){next}#should catch corrupted rdata
         if (model_type != "rf"){
           model_preds <- model_output$predictions}
         if (model_type == "rf"){
@@ -68,9 +70,9 @@ slurm_evaluate <- function(community_folder, model, method){
     true_prob_occ <- raster::crop(community[[j]]$true_prob_occ, prediction)
     true_pa <- raster::crop(community[[j]]$pres_abs, prediction)
     
-    mse <- mean((getValues(true_prob_occ)-getValues(prediction))^2, na.rm=TRUE)
-    corr <- cor(getValues(true_prob_occ), getValues(prediction), use = "pairwise.complete")
-    auc <- as.numeric(pROC::auc(getValues(true_pa), getValues(prediction), quiet = TRUE))
+    mse <- mean((raster::getValues(true_prob_occ)-raster::getValues(prediction))^2, na.rm=TRUE)
+    corr <- cor(raster::getValues(true_prob_occ), raster::getValues(prediction), use = "pairwise.complete")
+    auc <- as.numeric(pROC::auc(raster::getValues(true_pa), raster::getValues(prediction), quiet = TRUE))
     
     method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, species = species))
   
@@ -89,7 +91,7 @@ slurm_evaluate <- function(community_folder, model, method){
   if(is.null(community[[1]]$prevalence)){
     prevalence <- vector()
     for (j in 1:length(species_list)){
-      prevalence[j] <- sum(getValues(community[[j]]$pres_abs), na.rm=TRUE)/nrow(mod_average)
+      prevalence[j] <- sum(raster::getValues(community[[j]]$pres_abs), na.rm=TRUE)/nrow(mod_average)
     }
   } else {prevalence <- sapply(community, function(x) x$prevalence)}
   
