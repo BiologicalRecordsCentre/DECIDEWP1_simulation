@@ -11,8 +11,7 @@ fsdm <- function(species, model, climDat, spData, k, write, outPath, #inters = F
   
   if (is.null(spDat)) {
     out <- NULL
-  }
-  else {
+  } else {
     
     #### extract data ####
     pres <- data.frame(val = 1, raster::extract(x = climDat, y = spDat$Presence, na.rm = T), spDat$Presence)
@@ -255,10 +254,17 @@ fsdm <- function(species, model, climDat, spData, k, write, outPath, #inters = F
                      weights = weights)
         }
         
-        e[[i]] <- dismo::evaluate(p = test[test$val == 1, ], 
-                                  a = test[test$val == 0, ], 
-                                  mod, tr = seq(0, 1, length.out = 200))
-        
+        if(model == "rf"){
+          rf.pred <- predict(mod, type = "prob", newdata = test)[,2]
+          e[[i]] <- dismo::evaluate(p = rf.pred[test$val == 1], 
+                                    a = rf.pred[test$val == 0], 
+                                    tr = seq(0, 1, length.out = 200))
+          
+        } else {
+          e[[i]] <- dismo::evaluate(p = test[test$val == 1, ], 
+                                    a = test[test$val == 0, ], 
+                                    mod, tr = seq(0, 1, length.out = 200))
+        }
         
       }
       

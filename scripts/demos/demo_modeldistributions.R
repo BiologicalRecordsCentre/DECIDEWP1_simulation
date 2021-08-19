@@ -61,7 +61,9 @@ for(i in 1:length(sp.obs)){
 #' Initially we can run just the logistic regression models as a test
 
 #source Edited Rob Functions
-devtools::source_url("https://raw.githubusercontent.com/TMondain/DECIDE_WP1/main/scripts/functions/Edited_Rob_Functions.R")
+# devtools::source_url("https://raw.githubusercontent.com/TMondain/DECIDE_WP1/main/scripts/functions/Edited_Rob_Functions.R")
+
+source("scripts/functions/Edited_Rob_Functions.R")
 
 hbv_y <- raster::stack("hbv_y.grd") 
 
@@ -69,11 +71,17 @@ hbv_y <- raster::stack("hbv_y.grd")
 env_data <- subset(hbv_y, subset = virt_comm1[[1]]$details$variables)
 
 #source code from Thomas' workflow
-source("getpredictions.R")
+source("scripts/functions/getpredictions.R")
+
+sdm <- fsdm(species = "Sp1", model = "rf", climDat = env_data, spData = pa_sets, k = 3, write = FALSE)
+
+
+
+
 
 #' To run the models we use the LOTUS HPC facility as the bootstrapping and prediction steps are quite slow. So here we'll just read in some of the model outputs to demonstrate.
   
-load("lr_outs/Sp1_lr.Rdata")
+load("Outputs/GB_test/rf_SDMs_GBnew_Sp13.Rdata")
 
 #summary of one of the bootstrapped models (note 10 models run on each species with different data subsets)
 
@@ -82,3 +90,11 @@ summary(out$Bootstrapped_models[[1]])
 #we can also plot the modelled outputs alongside the simualted species distribution
 
 knitr::include_graphics("Plots/Sp1.png")
+
+
+
+
+
+
+
+out$
