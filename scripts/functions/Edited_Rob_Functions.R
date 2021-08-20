@@ -133,8 +133,9 @@ fsdm <- function(species, model, climDat, spData, k, write, outPath, #inters = F
       prop <- NULL 
       
     } else { 
+      prop <- 1
       
-      stop('Model specified not accepted by fitSDM (problem with prop calculation)')
+      #stop('Model specified not accepted by fitSDM (problem with prop calculation)')
       
     }
     

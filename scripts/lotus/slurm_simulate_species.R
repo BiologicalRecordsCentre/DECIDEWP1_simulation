@@ -51,7 +51,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     prevalence <- as.numeric(pa$PA.conversion[5])
     #determine maximum number of observations based on prevalence
     #max_obs <- round(prevalence*max_samp)
-    max_obs <- 1000 #set max no of observations - could use data?
+    max_obs <- max_samp #set max no of observations - could use data?
     #sample observations based on bias and detection prob
     occs <- sampleOccurrences(pa, n = max_obs, type = "presence-absence", detection.probability = det_prob, bias = "manual", weights = eff_weights)
     #rename columns of occurrences data
@@ -78,7 +78,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 1:2, n_env = 10, n = 50, effort = "butterfly_1km_effort_layer.grd", background = "MeanDiRange")
+pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 3, max_samp = 100000, n_env = 10, n = 50, effort = "butterfly_1km_effort_layer.grd", background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
                     jobname = 'sim_spp',
@@ -87,7 +87,7 @@ sjob <- slurm_apply(simulate_species, pars,
                     submit = TRUE,
                     slurm_options = list(partition = "test",
                                          time = "0:59:59",
-                                         mem = "20000",
+                                         mem = "10000",
                                          output = "sim_spp_%a.out",
                                          error = "sim_spp_%a.err"),
                     sh_template = "jasmin_submit_sh.txt")
