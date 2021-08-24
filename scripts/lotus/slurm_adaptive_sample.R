@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, outPath){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent_crop = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, outPath){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
   models <- list.files(path = sdm_path, pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
@@ -8,13 +8,16 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   #import simulated community data
   community <- readRDS(community_file)
   
+  #extract prevalence vector
+  prevalence_vec <- sapply(community, function(x) x$prevalence)
+  
   #import env_data if specified
   if(!is.null(env_data)){
     env <- raster::stack(env_data)
     
     #crop to extent if specified
-    if(!is.null(extent)){
-      e <- as(extent, "SpatialPolygons")
+    if(!is.null(extent_crop)){
+      e <- as(extent_crop, "SpatialPolygons")
       sp::proj4string(e) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
       
       e.geo <- sp::spTransform(e, CRS("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs"))
@@ -71,6 +74,9 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     
     #average model outputs (note - not weighted by AUC currently)
     mod_average <- Reduce(`+`, model_outputs) / length(model_outputs)
+    
+    #multiply mean by 1-prevalence - upweights rare species
+    try(mod_average$mean <- mod_average$mean*(1-prevalence_vec[j]))
     
     #store only the model average for now - could edit to store the individual model outputs if needed
     if(is.null(nrow(mod_average))){community_preds[[j]] <- NULL} else { community_preds[[j]] <- mod_average; names(community_preds)[j] <- species}
