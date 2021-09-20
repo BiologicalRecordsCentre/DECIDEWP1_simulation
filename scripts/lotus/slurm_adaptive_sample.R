@@ -250,7 +250,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths_AS")
 
-pars <- data.frame(community_file = paste0(dirs$commpath,"community_1_50_sim/community_1_50_sim.rds"), sdm_path = paste0(dirs$sdmpath,"community_1_50_sim/"), effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), background = "AnnualTemp", env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), weight_adj = 1, method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage"), n = 100, outPath = paste0(dirs$outpath,"community_1_50_sim/"))
+pars <- data.frame(community_file = paste0(dirs$commpath,"community_1_50_sim/community_1_50_sim.rds"), sdm_path = paste0(dirs$sdmpath,"community_1_50_sim/"), effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), background = "AnnualTemp", env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), weight_adj = 1, method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "coverage", "unc_plus_recs"), n = 100, outPath = paste0(dirs$outpath,"community_1_50_sim/"))
 
 
 sjob <- slurm_apply(slurm_adaptive_sample, pars, 
