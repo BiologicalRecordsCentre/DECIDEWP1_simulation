@@ -154,9 +154,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
                        meanAUC = sdm$meanAUC,
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
-  save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type,
-                                   ".rdata"))
-  
+  save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
   
 
 
@@ -167,7 +165,9 @@ library(rslurm)
 dirs <- config::get("LOTUSpaths")
 
 ## index file
-pars <- data.frame(index = 3, spdata = paste0(dirs$commpath, "community_3_50_sim/community_3_50_sim.rds"), model = c("lr", "gam", "rf"), data_type = "initial", writeRas = FALSE, GB = TRUE) # number of species
+                
+pars <- data.frame(index = rep(1:50, 15), spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), writeRas = FALSE, GB = TRUE)
+                   
 
 #test with subset of runs
 #pars <- pars[-c(1,78,103,166,208,294,315,352,422, 484,517, 569, 646,675, 735),]
@@ -178,11 +178,12 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          jobname = 'sdm_simulated_species',
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'test',
+                         slurm_options = list(partition = 'short-serial-4hr',
                                               time = '0:59:59',
                                               mem = 10000,
                                               output = "sim_sdm_%a.out",
-                                              error = "sim_sdm_%a.err"),
+                                              error = "sim_sdm_%a.err",
+                                              account = "short4hr"),
                          sh_template = "jasmin_submit_sh.txt",
                          submit = T)
 

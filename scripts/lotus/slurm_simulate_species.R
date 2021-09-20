@@ -78,7 +78,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 3, max_samp = 100000, n_env = 10, n = 50, effort = "butterfly_1km_effort_layer.grd", background = "MeanDiRange")
+pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",outPath = dirs$outpath, seed = 5, max_samp = 10000, n_env = 10, n = 50, effort = "butterfly_1km_effort_layer.grd", background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
                     jobname = 'sim_spp',
