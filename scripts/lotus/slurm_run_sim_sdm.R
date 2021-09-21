@@ -164,23 +164,25 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-## index file
+# ## index file
+# 
+# pars <- data.frame(index = rep(1:50, 15), 
+#                    spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), 
+#                    model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), 
+#                    data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), 
+#                    writeRas = FALSE, GB = TRUE)
 
-pars <- data.frame(index = rep(1:50, 15), 
-                   spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), 
-                   model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), 
-                   data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), 
-                   writeRas = FALSE, GB = TRUE)
 
+## new parameters code to try and automate the parameter generation file a little more
 n_communities = 50
 models = c('lr', 'gam', 'rf')
-data_type = c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") # , 
+data_type = c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") 
 
-v <- data.frame(index = rep(1:n_communities, length(models)*length(data_type)),
-           spdata = rep(sprintf("community_%i_50_sim/community_%i_50_sim_%s.rds", c(1:n_communities), c(1:n_communities), rep(data_type, each = n_communities)), length(models)),
-           model = rep(rep(models, each = n_communities), length(data_type)),
-           data_type = rep(sprintf("%s", rep(data_type, each = n_communities)), length(models)),
-           writeRas = FALSE, GB = TRUE)
+pars <- data.frame(index = rep(1:n_communities, length(models)*length(data_type)),
+                   spdata = rep(sprintf("community_%i_50_sim/community_%i_50_sim_%s.rds", c(1:n_communities), c(1:n_communities), rep(data_type, each = n_communities)), length(models)),
+                   model = rep(rep(models, each = n_communities), length(data_type)),
+                   data_type = rep(rep(data_type, each = n_communities), length(models)),
+                   writeRas = FALSE, GB = TRUE)
 
 
 
