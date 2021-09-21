@@ -108,10 +108,10 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-n_communities = 50
+n_communities = 1:50
 
 ## index file
-pars <- data.frame(community_folder = paste0(dirs$commpath, sprintf("community_%i_50_sim/", c(1:n_communities))), model = "rf, gam, lr", method = "initial, none, uncertainty, prevalence, unc_plus_recs, coverage")
+pars <- data.frame(community_folder = paste0(dirs$commpath, sprintf("community_%i_50_sim/", n_communities)), model = "rf, gam, lr", method = "initial, none, uncertainty, prevalence, unc_plus_prev, unc_plus_recs, coverage")
 
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_evaluate,
