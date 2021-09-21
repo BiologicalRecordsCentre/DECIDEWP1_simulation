@@ -29,7 +29,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   #read in raster data for env data
   #read in env data frame
   
-    if(GB == TRUE){
+  if(GB == TRUE){
     hbv_y <- raster::stack(paste0(dirs$inpath,"envdata_1km_no_corr_noNA.grd"))
     hbv_df <- read.csv(paste0(dirs$inpath, "hbv_df_1km.csv"))} else if(GB == FALSE){
       hbv_y <- raster::stack(paste0(dirs$inpath,"hbv_y.grd")) 
@@ -101,33 +101,33 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   
   if(writeRas == TRUE){
     
-  # save prediction raster
-  writeRaster(x = rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), 
-              filename = paste0(outPath, model, "_SDMs_", species_name, "_meanpred.grd"),
-              format = 'raster', overwrite = T)
-  
-  # save sd raster
-  writeRaster(x = rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), 
-              filename = paste0(outPath, model, "_SDMs_", species_name, "_sdpred.grd"),
-              format = 'raster', overwrite = T)
-  
-  
-  #' Plot maps
-  #' 
-  png(paste0(dirs$outpath,"Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
-  
-  par(mfrow=c(3,2))
-  par(mar = c(2,2,2,2))
-  plot(community[[index]]$true_prob_occ, main = "Probability of occurrence")
-  plot(community[[index]]$pres_abs, main = "Presence absence")
-  points(community[[index]]$observations[!is.na(community[[index]]$observations$Observed),1:2], pch = 20)
-  plot(rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), main = "Predicted prob. occ")
-  plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), main = "Standard deviation of predictions")
-  plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, DECIDE_score)), main = "DECIDE score")
-  
-  dev.off()
-  
-  
+    # save prediction raster
+    writeRaster(x = rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), 
+                filename = paste0(outPath, model, "_SDMs_", species_name, "_meanpred.grd"),
+                format = 'raster', overwrite = T)
+    
+    # save sd raster
+    writeRaster(x = rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), 
+                filename = paste0(outPath, model, "_SDMs_", species_name, "_sdpred.grd"),
+                format = 'raster', overwrite = T)
+    
+    
+    #' Plot maps
+    #' 
+    png(paste0(dirs$outpath,"Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
+    
+    par(mfrow=c(3,2))
+    par(mar = c(2,2,2,2))
+    plot(community[[index]]$true_prob_occ, main = "Probability of occurrence")
+    plot(community[[index]]$pres_abs, main = "Presence absence")
+    points(community[[index]]$observations[!is.na(community[[index]]$observations$Observed),1:2], pch = 20)
+    plot(rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), main = "Predicted prob. occ")
+    plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), main = "Standard deviation of predictions")
+    plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, DECIDE_score)), main = "DECIDE score")
+    
+    dev.off()
+    
+    
   }
   
   # write AUC to file for easy-access
@@ -137,7 +137,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   
   # write data to file too
   #write.csv(x = sdm$Data,
-   #         file = paste0(outPath, model, "_SDMs_", species_name, "_Data.csv"))
+  #         file = paste0(outPath, model, "_SDMs_", species_name, "_Data.csv"))
   
   # save subset model output
   # remove data from model output
@@ -156,8 +156,8 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   
   save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
   
-
-
+  
+  
 }
 
 library(rslurm)
@@ -165,9 +165,24 @@ library(rslurm)
 dirs <- config::get("LOTUSpaths")
 
 ## index file
-                
-pars <- data.frame(index = rep(1:50, 15), spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), writeRas = FALSE, GB = TRUE)
-                   
+
+pars <- data.frame(index = rep(1:50, 15), 
+                   spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), 
+                   model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), 
+                   data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), 
+                   writeRas = FALSE, GB = TRUE)
+
+n_communities = 50
+models = c('lr', 'gam', 'rf')
+data_type = c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") # , 
+
+v <- data.frame(index = rep(1:n_communities, length(models)*length(data_type)),
+           spdata = rep(sprintf("community_%i_50_sim/community_%i_50_sim_%s.rds", c(1:n_communities), c(1:n_communities), rep(data_type, each = n_communities)), length(models)),
+           model = rep(rep(models, each = n_communities), length(data_type)),
+           data_type = rep(sprintf("%s", rep(data_type, each = n_communities)), length(models)),
+           writeRas = FALSE, GB = TRUE)
+
+
 
 #test with subset of runs
 #pars <- pars[-c(1,78,103,166,208,294,315,352,422, 484,517, 569, 646,675, 735),]
