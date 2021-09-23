@@ -63,4 +63,40 @@ tapply(eval_out$mse_diff, eval_out$method, function(x) mean(x, na.rm = T))
 tapply(eval_out$corr_diff, eval_out$method, function(x) mean(x, na.rm = T))
 tapply(eval_out$auc_diff, eval_out$method, function(x) mean(x, na.rm = T))
 
+
+library(tidyverse)
+library(ggridges)
+
+# outputs from susan’s first run.
+cdf <- eval_out
+head(cdf)
+
+
+ggplot(cdf, aes(x = prevalence, y = corr, colour = method)) +
+  geom_point() +
+  geom_smooth()
+
+
+cdf2 <- cdf %>% 
+  pivot_longer(cols = 3:5)
+
+
+ggplot(cdf2, aes(x = prevalence, y = value, colour = method)) +
+  geom_point() +
+  geom_smooth(se = F) +
+  facet_wrap(~name) +
+  labs(y='Evaluation metric') +
+  theme_bw()
+
+# ggplot(cdf2, aes(x = value, y = method, fill = method)) +
+#   geom_density_ridges()+
+#   facet_wrap(~name) +
+#   labs(y='Evaluation metric') +
+#   theme_bw()
+
+ggplot(cdf2, aes(x = method, y = value, colour = name)) +
+  geom_boxplot() +
+  facet_wrap(~name, scales = 'free') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
        
