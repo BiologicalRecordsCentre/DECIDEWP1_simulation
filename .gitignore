@@ -6,6 +6,7 @@
 # specific files
 config.yml
 jasmin_submit_sh.txt
+*parameter_list*
 
 data/
 outputs/

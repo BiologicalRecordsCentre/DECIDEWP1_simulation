@@ -250,11 +250,11 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths_AS")
 
-n_communities = 1:50
+n_communities = 1:500
 
 method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
 
-pars <- data.frame(community_file = rep(paste0(dirs$commpath, sprintf("community_%i_50_sim/community_%i_50_sim.rds", n_communities, n_communities)), each = length(method)), 
+pars <- data.frame(community_file = rep(paste0(dirs$commpath, sprintf("community_%i_50_sim/community_%i_50_sim_initial.rds", n_communities, n_communities)), each = length(method)), 
                    sdm_path = rep(paste0(dirs$sdmpath, sprintf("community_%i_50_sim/", n_communities)), each = length(method)), 
                    effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), 
                    background = "AnnualTemp", 
@@ -271,11 +271,10 @@ sjob <- slurm_apply(slurm_adaptive_sample, pars,
                     cpus_per_node = 1, 
                     submit = TRUE,
                     slurm_options = list(partition = "short-serial-4hr",
-                                         time = "00:04:59",
+                                         time = "00:03:59",
                                          mem = "6000",
                                          output = "sim_spp_%a.out",
                                          error = "sim_spp_%a.err",
                                          account = "short4hr"),
                     sh_template = "jasmin_submit_sh.txt")
-
 
