@@ -67,6 +67,8 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
         model_preds <- model_output$predictions[,names(model_output$predictions) %in% c("x", "y", "mean.1", "sd", "DECIDE_score.1")]
         names(model_preds) <- c("x", "y", "mean", "sd", "DECIDE_score")
       }
+      model_preds$mean <- model_preds$mean*(1-prevalence_vec[j]) #weight prevalence by rarity
+      model_preds$DECIDE_score <- model_preds$mean*model_preds$sd #recalculate with prevalence weighted by rarity
       model_outputs[[idx]] <- model_preds
       names(model_outputs)[idx] <- model_type
       idx <- idx + 1
@@ -75,8 +77,8 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     #average model outputs (note - not weighted by AUC currently)
     mod_average <- Reduce(`+`, model_outputs) / length(model_outputs)
     
-    #multiply mean by 1-prevalence - upweights rare species
-    try(mod_average$mean <- mod_average$mean*(1-prevalence_vec[j]))
+    #multiply mean by 1-prevalence - upweights rare species - now done per model above
+    #try(mod_average$mean <- mod_average$mean*(1-prevalence_vec[j]))
     
     #store only the model average for now - could edit to store the individual model outputs if needed
     if(is.null(nrow(mod_average))){community_preds[[j]] <- NULL} else { community_preds[[j]] <- mod_average; names(community_preds)[j] <- species}
