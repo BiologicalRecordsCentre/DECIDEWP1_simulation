@@ -179,9 +179,9 @@ n_communities = 1 # number of communities to go through
 models = c('lr', 'gam', 'rf')
 data_type = 'initial' # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") 
 
-# need to change the spdata file to make sure it works for data_type = "initial" because at the moment it will have 'initial' on the end which won't find the original file. 
+
 pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*length(n_communities)),
-                   spdata = rep(sprintf("community_%i_50_sim/community_%i_50_sim_%s.rds", n_communities, n_communities, rep(data_type, each = length(n_communities))), length(models)),
+                   spdata = rep(sprintf(paste0(dirs$commpath, "community_%i_50_sim/community_%i_50_sim_%s.rds"), n_communities, n_communities, rep(data_type, each = length(n_communities))), length(models)),
                    model = rep(rep(models, each = length(n_communities)), length(data_type)),
                    data_type = rep(rep(data_type, each = length(n_communities)), length(models)),
                    writeRas = FALSE, GB = TRUE)

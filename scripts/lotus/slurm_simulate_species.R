@@ -71,22 +71,22 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     dir.create(paste0(outPath, community_name,"/"))
   }
   
-  saveRDS(community, file = paste0(outPath,community_name,"/", community_name, "_intial.rds"))
+  saveRDS(community, file = paste0(outPath,community_name,"/", community_name, "_initial.rds"))
 }
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-n_communities = 1:50
+n_communities = 1:20
 
-pars <- data.frame(env_data = "envdata_1km_no_corr_noNA.grd",
+pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 
                    seed = n_communities, # community number
                    max_samp = 20000, 
                    n_env = 10, 
                    n = 50, 
-                   effort = "butterfly_1km_effort_layer.grd", 
+                   effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
                    background = "MeanDiRange")
 
 sjob <- slurm_apply(simulate_species, pars, 
@@ -95,7 +95,7 @@ sjob <- slurm_apply(simulate_species, pars,
                     cpus_per_node = 1, 
                     submit = TRUE,
                     slurm_options = list(partition = "short-serial-4hr",
-                                         time = "0:59:59",
+                                         time = "2:30:00",
                                          mem = "10000",
                                          output = "sim_spp_%a.out",
                                          error = "sim_spp_%a.err",
