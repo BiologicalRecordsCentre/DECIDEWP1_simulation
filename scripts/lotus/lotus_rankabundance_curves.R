@@ -1,6 +1,9 @@
 
 ###   Get rank abundance curves for all communities
 
+##########
+##  This is run in an R terminal on lotus
+
 # package for sorting
 library(tidyverse)
 
