@@ -44,7 +44,7 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
     #subset env raster
     my.stack <- env_extent[[sample(1:nlayers(env_extent),size = runif(1,env_min,env_max), replace = FALSE)]]
     #generate a suitability raster
-    my.pca.species <- generateSpFromPCA(raster.stack = my.stack, sample.points=TRUE, nb.points = 10000, plot = FALSE)
+    my.pca.species <- generateSpFromPCA(raster.stack = my.stack, sample.points=TRUE, nb.points = 10000, plot = FALSE, niche.breadth = "narrow")
     #convert to presence-absence
     pa <- convertToPA(my.pca.species, beta = beta, alpha = alpha, plot = FALSE)
     #extract prevalence
