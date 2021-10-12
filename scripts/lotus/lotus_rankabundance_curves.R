@@ -42,7 +42,7 @@ ra_c <- read.csv('Outputs/combined_community_1_20_output.csv')
 
 ra_c <- ra_c %>% 
   group_by(community_name) %>% 
-  arrange(prev) %>% 
+  arrange(-prev) %>% 
   mutate(rank = 1:50) %>% 
   arrange(X)
 
