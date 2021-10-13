@@ -7,6 +7,9 @@
 # package for sorting
 library(tidyverse)
 
+# make sure we're in the right directory
+setwd('/gws/nopw/j04/ceh_generic/thoval/DECIDE/simulation')
+
 # get the directories
 dirs <- config::get("LOTUSpaths")
 
@@ -53,5 +56,6 @@ head(ra_c)
 
 ggplot(ra_c, aes(x = rank, y = prev, colour = community_name)) +
   geom_line() +
+  ylim(0,0.5) +
   theme_classic() +
   ylab('Prevalence')
