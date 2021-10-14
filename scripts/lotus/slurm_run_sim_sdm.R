@@ -186,6 +186,7 @@ pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*lengt
                    data_type = rep(rep(data_type, each = length(n_communities)), length(models)),
                    writeRas = FALSE, GB = TRUE)
 
+
 # # Old parameter generation file
 # pars <- data.frame(index = rep(1:50, 15), 
 #                    spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), 
@@ -197,6 +198,8 @@ pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*lengt
 #test with subset of runs
 #pars <- pars[-c(1,78,103,166,208,294,315,352,422, 484,517, 569, 646,675, 735),]
 
+
+
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          params = pars,
@@ -204,12 +207,15 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          nodes = length(pars$index),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial-4hr',
-                                              time = '0:59:59',
+                                              time = '0:04:59',
                                               mem = 10000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err",
                                               account = "short4hr"),
                          sh_template = "jasmin_submit_sh.txt",
                          submit = T)
+pars$BatchID <- sdm_slurm$jobid
+pars$JobID <- 0:(nrow(pars)-1)#slurm job ID
+write.csv(pars, "_rslurm_sdm_simulated_species/pars.csv")#to match to error files
 
 
