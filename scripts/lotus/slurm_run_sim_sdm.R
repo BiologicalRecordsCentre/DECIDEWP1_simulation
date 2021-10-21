@@ -1,6 +1,6 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
+slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, ras_save_loc, GB){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
@@ -16,7 +16,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   dirs <- config::get("LOTUSpaths")
   
   #now matches output format of slurm_simulate_species.R - can be changed?
-  community <- readRDS(spdata)
+  community <- readRDS(as.character(spdata))
   
   #' ## 2. Create input data for models
   #' 
@@ -83,7 +83,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   sdm <- fsdm(species = species, model = model,
               climDat = env_data, spData = pres_abs, knots_gam = 4,
               k = k, 
-              write =  TRUE, outPath = paste0(dirs$outpath,"lr_outs/"))
+              write =  FALSE, outPath = paste0(dirs$outpath))
   
   #predictions
   
@@ -101,20 +101,27 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   
   if(writeRas == TRUE){
     
+    # create a new location to save all rasters
+    dir.create(paste0(outPath, ras_save_loc))
+    
     # save prediction raster
     writeRaster(x = rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), 
-                filename = paste0(outPath, model, "_SDMs_", species_name, "_meanpred.grd"),
+                filename = paste0(outPath, ras_save_loc, model, "_SDMs_", species_name, "_meanpred.grd"),
                 format = 'raster', overwrite = T)
     
     # save sd raster
     writeRaster(x = rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), 
-                filename = paste0(outPath, model, "_SDMs_", species_name, "_sdpred.grd"),
+                filename = paste0(outPath, ras_save_loc, model, "_SDMs_", species_name, "_sdpred.grd"),
                 format = 'raster', overwrite = T)
     
     
     #' Plot maps
     #' 
-    png(paste0(dirs$outpath,"Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
+    #' 
+    # create a new location to save all rasters
+    dir.create(paste0(outPath, ras_save_loc, '/Plots/'))
+    
+    png(paste0(dirs$outpath, ras_save_loc,"/Plots/", species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
     
     par(mfrow=c(3,2))
     par(mar = c(2,2,2,2))
@@ -143,7 +150,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
   # remove data from model output
   sdm$Data <- NULL
   
-  community_name <- strsplit(spdata,"\\/")[[1]][10]
+  community_name <- strsplit(as.character(spdata),"\\/")[[1]][10]
   
   # output of model to store
   model_output <- list(community = community_name, 
@@ -154,7 +161,10 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB){
                        meanAUC = sdm$meanAUC,
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
-  save(model_output, file = paste0(outPath, "communities_1km/", community_name,"/", model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
+  # create a new directory to store species SDMs
+  dir.create(paste0(outPath, community_name, "/species_data/"))
+  
+  save(model_output, file = paste0(outPath, community_name,"/species_data/", model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
   
   
   
@@ -175,16 +185,18 @@ dirs <- config::get("LOTUSpaths")
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
-n_communities = 1 # number of communities to go through
+n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
 data_type = 'initial' # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") 
 
 
 pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*length(n_communities)),
-                   spdata = rep(sprintf(paste0(dirs$commpath, "community_%i_50_sim/community_%i_50_sim_%s.rds"), n_communities, n_communities, rep(data_type, each = length(n_communities))), length(models)),
+                   spdata = as.character(rep(sprintf(paste0(dirs$commpath, "community_%i_50_sim/community_%i_50_sim_%s.rds"), n_communities, n_communities, rep(data_type, each = length(n_communities))), length(models))),
                    model = rep(rep(models, each = length(n_communities)), length(data_type)),
                    data_type = rep(rep(data_type, each = length(n_communities)), length(models)),
-                   writeRas = FALSE, GB = TRUE)
+                   writeRas = FALSE, 
+                   ras_save_loc = 'species_sdms_1km', 
+                   GB = TRUE)
 
 
 # # Old parameter generation file
@@ -207,7 +219,7 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          nodes = length(pars$index),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial-4hr',
-                                              time = '0:04:59',
+                                              time = '3:59:59',
                                               mem = 10000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err",

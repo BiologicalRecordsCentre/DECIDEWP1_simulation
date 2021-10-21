@@ -10,6 +10,7 @@ jasmin_submit_sh.txt
 
 data/
 outputs/
+*.yml
 
 # Session Data files
 .RData
