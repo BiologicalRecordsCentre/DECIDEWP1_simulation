@@ -1,10 +1,10 @@
-simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL){
+simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,version_name, simulation_run_name){
   
   library(raster)
   library(virtualspecies)
   
   #read in data
-  env <- raster::stack(env_data)
+  env <- raster::stack(as.character(env_data))
   
   #set seed if specified
   if(!is.null(seed)){set.seed(seed)}
@@ -67,18 +67,21 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   
   community_name <- paste0("community_",seed,"_", n, "_sim")
   
-  if(!dir.exists(paste0(outPath, community_name,"/"))){
-    dir.create(paste0(outPath, community_name,"/"))
+  if(!dir.exists(paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/"))){
+    dir.create(paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/"), recursive = T)
   }
   
-  saveRDS(community, file = paste0(outPath,community_name,"/", community_name, "_initial.rds"))
+  saveRDS(community, file = paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/", version_name, community_name, "_initial.rds"))
 }
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-n_communities = 1:20
+# a version name that follows all the way through the modelling
+version_name = 'v1'
+
+n_communities = 1
 
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 
@@ -87,18 +90,20 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    n_env = 10, 
                    n = 50, 
                    effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
-                   background = "MeanDiRange")
+                   background = "MeanDiRange",
+                   version_name = version_name,
+                   simulation_run_name = 'communities_1km') # the name of the run name - don't change unless changing the resolution of the area of interest.
 
 sjob <- slurm_apply(simulate_species, pars, 
-                    jobname = 'sim_spp',
+                    jobname = 'sim_spp_test',
                     nodes = nrow(pars), 
                     cpus_per_node = 1, 
                     submit = TRUE,
-                    slurm_options = list(partition = "short-serial-4hr",
+                    slurm_options = list(partition = 'test', #"short-serial-4hr",
                                          time = "3:59:59",
                                          mem = "10000",
                                          output = "sim_spp_%a.out",
-                                         error = "sim_spp_%a.err",
-                                         account = "short4hr"),
+                                         error = "sim_spp_%a.err"),
+                                         # account = "short4hr"),
                     sh_template = "jasmin_submit_sh.txt")
 

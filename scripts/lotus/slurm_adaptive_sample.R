@@ -240,31 +240,44 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables, AS_method = method))
   
-  community_name <- strsplit(basename(community_file),"\\.")[[1]][1]
+  community_name <- strsplit(basename(as.character(community_file)),"\\.")[[1]][1]
+  
+  dir.create(paste0(outPath, version_name, "adaptive_sampling_data/"), recursive = TRUE)
   
   saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
   
 }
 
-source("slurm_adaptive_sample_function.R")
+source("scripts/slurm_adaptive_sample_function.R")
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_AS")
 
-n_communities = 1:500
+# name of the version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
+version_name = 'v1'
+
+# the name of the simulation run - same as slurm_simulate species
+simulation_run_name = 'communities_1km'
+
+# number ofc communities
+n_communities = 1
+
+# number of species in each community - used only in the parameter file to allow runs with different numbers of species
+n_species = 50
 
 method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
 
-pars <- data.frame(community_file = rep(paste0(dirs$commpath, sprintf("community_%i_50_sim/community_%i_50_sim_initial.rds", n_communities, n_communities)), each = length(method)), 
-                   sdm_path = rep(paste0(dirs$sdmpath, sprintf("community_%i_50_sim/", n_communities)), each = length(method)), 
+pars <- data.frame(community_file = rep(paste0(dirs$commpath, version_name, simulation_run_name, "/", version_name, sprintf(paste0("community_%i_%i_sim/", version_name, "community_%i_%i_sim_initial.rds"), n_communities, max(n_species), n_communities, max(n_species))), each = length(method)), 
+                   sdm_path = rep(paste0(dirs$sdmpath, version_name, simulation_run_name, "/", version_name, sprintf("community_%i_%i_sim/", n_communities, max(n_species)), version_name, "species_data/"), each = length(method)), 
                    effort = paste0(dirs$inputs,"butterfly_1km_effort_layer.grd"), 
                    background = "AnnualTemp", 
                    env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"), 
                    weight_adj = 1, 
                    method = method, 
-                   n = 2000, 
-                   outPath = rep(paste0(dirs$outpath, sprintf("community_%i_50_sim/", n_communities)), each = length(method)))
+                   n = 2000,
+                   version_name = version_name,
+                   outPath = rep(paste0(dirs$outpath, version_name, simulation_run_name, "/", version_name, sprintf("community_%i_%i_sim/", n_communities, max(n_species))), each = length(method)))
 
 
 sjob <- slurm_apply(slurm_adaptive_sample, pars, 
