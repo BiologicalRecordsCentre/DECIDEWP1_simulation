@@ -13,7 +13,7 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   #import env_data if specified
   if(!is.null(env_data)){
-    env <- raster::stack(env_data)
+    env <- raster::stack(as.character(env_data))
     
     #crop to extent if specified
     if(!is.null(extent_crop)){
