@@ -1,12 +1,12 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent_crop = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, outPath){
+slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent_crop = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, version_name, outPath){
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
-  models <- list.files(path = sdm_path, pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
+  models <- list.files(path = as.character(sdm_path), pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
   
   #import simulated community data
-  community <- readRDS(community_file)
+  community <- readRDS(as.character(community_file))
   
   #extract prevalence vector
   prevalence_vec <- sapply(community, function(x) x$prevalence)
