@@ -92,6 +92,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
   ## save files ##
   species_name <- gsub(pattern = ' ', replacement = '_', species) # get species name without space
   
+  # create the output path to be in the community that the species belongs to
   outPath <- paste0(dirs$outpath, version_name, simulation_run_name,'/', version_name, "community_",n_communities,"_", n_species, "_sim/")
   
   #' Calculate very simple DECIDE score - prediction * standard deviation
@@ -160,11 +161,11 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
   # create a new directory to store species SDMs
-  dir.create(paste0(outPath, version_name, "species_data/"))
+  dir.create(paste0(outPath, version_name, "species_models/"))
   
   print("#####     Saving output     #####") ## to check if the process is hanging on lotus
   
-  save(model_output, file = paste0(outPath, version_name, "species_data/",version_name, model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
+  save(model_output, file = paste0(outPath, version_name, "species_models/",version_name, model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
   
   print("#####     Output saved     #####")
   
@@ -186,12 +187,12 @@ dirs <- config::get("LOTUSpaths")
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
-n_communities = 1 # number of communities to go through
+n_communities = 1:20 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = 'initial' # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage") 
+data_type = 'initial'  # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage")
 
 # version name from slurm_simulate_species
-version_name = 'v1'
+version_name = 'v2'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -218,11 +219,11 @@ pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*lengt
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          params = pars,
-                         jobname = 'sdm_simulated_species_test',
+                         jobname = paste0(version_name, '_sdm_simulated_species'),
                          nodes = length(pars$index),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'test', # 'short-serial',#-4hr',
-                                              time = '03:59:59', #'23:59:59',
+                         slurm_options = list(partition = 'short-serial',#-4hr',
+                                              time = '23:59:59',
                                               mem = 10000,
                                               output = "sim_sdm_%a.out",
                                               error = "sim_sdm_%a.err"),#,
@@ -231,6 +232,6 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          submit = T)
 pars$BatchID <- sdm_slurm$jobid
 pars$JobID <- 0:(nrow(pars)-1)#slurm job ID
-write.csv(pars2, "_rslurm_sdm_simulated_species/pars.csv")#to match to error files
+write.csv(pars, "_rslurm_sdm_simulated_species/pars.csv")#to match to error files
 
 

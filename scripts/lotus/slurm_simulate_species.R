@@ -79,9 +79,9 @@ library(rslurm)
 dirs <- config::get("LOTUSpaths_sim")
 
 # a version name that follows all the way through the modelling
-version_name = 'v1'
+version_name = 'v2'
 
-n_communities = 1
+n_communities = 1:20
 
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 
@@ -95,15 +95,15 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    simulation_run_name = 'communities_1km') # the name of the run name - don't change unless changing the resolution of the area of interest.
 
 sjob <- slurm_apply(simulate_species, pars, 
-                    jobname = 'sim_spp_test',
+                    jobname = 'sim_spp',
                     nodes = nrow(pars), 
                     cpus_per_node = 1, 
                     submit = TRUE,
-                    slurm_options = list(partition = 'test', #"short-serial-4hr",
+                    slurm_options = list(partition = "short-serial-4hr",
                                          time = "3:59:59",
                                          mem = "10000",
                                          output = "sim_spp_%a.out",
-                                         error = "sim_spp_%a.err"),
-                                         # account = "short4hr"),
+                                         error = "sim_spp_%a.err",
+                                         account = "short4hr"),
                     sh_template = "jasmin_submit_sh.txt")
 

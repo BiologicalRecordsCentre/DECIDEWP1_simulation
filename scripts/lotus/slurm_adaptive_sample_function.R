@@ -244,6 +244,6 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   dir.create(paste0(outPath, version_name, "adaptive_sampling_data/"), recursive = TRUE)
   
-  saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
+  saveRDS(community_AS, file = paste0(outPath, version_name, "adaptive_sampling_data/", community_name, "_AS_", method, ".rds"))
   
 }
