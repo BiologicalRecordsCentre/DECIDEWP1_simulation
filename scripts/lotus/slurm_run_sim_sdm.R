@@ -189,7 +189,7 @@ dirs <- config::get("LOTUSpaths")
 n_species = 1:50 # vector of number of species in each community
 n_communities = 1:20 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = 'initial'  # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage")
+data_type = 'initial' # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage")
 
 # version name from slurm_simulate_species
 version_name = 'v2'
@@ -197,17 +197,26 @@ version_name = 'v2'
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
 
-pars <- data.frame(index = rep(n_species, length(models)*length(data_type)*length(n_communities)),
-                   spdata = as.character(rep(sprintf(paste0(dirs$commpath, version_name, simulation_run_name,"/", version_name,"community_%i_%i_sim/", version_name, "community_%i_%i_sim_%s.rds"), n_communities, max(n_species), n_communities, max(n_species), rep(data_type, each = length(n_communities))))),
-                   model = rep(rep(models, each = length(n_communities)), length(data_type)),
-                   data_type = rep(rep(data_type, each = length(n_communities)), length(models)),
-                   writeRas = FALSE, 
+# pars data frame
+pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*length(data_type)),
+                   spdata = rep(sprintf(
+                     paste0(dirs$commpath, version_name, simulation_run_name,"/", version_name,
+                            "community_%i_%i_sim/", version_name, "community_%i_%i_sim_%s.rds"), 
+                     rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), 
+                     rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), data_type
+                   ), each = length(n_species)),
+                   model = rep(rep(rep(models, length(n_communities)), each = length(data_type)), each = length(n_species)),
+                   data_type = rep(rep(data_type, length(n_communities)*length(models)), each = length(n_species)), 
+                   writeRas = FALSE,
                    GB = TRUE,
                    version_name = version_name,
                    simulation_run_name = simulation_run_name,
-                   n_communities = n_communities,
-                   n_species = max(n_species))
+                   
+                   n_communities = rep(rep(rep(n_communities, each = length(models)), each = length(data_type)), each = length(n_species)),
+                   n_species = max(n_species)
+)
 
+dim(pars)
 
 #test with subset of runs
 #pars <- pars[-c(1,78,103,166,208,294,315,352,422, 484,517, 569, 646,675, 735),]

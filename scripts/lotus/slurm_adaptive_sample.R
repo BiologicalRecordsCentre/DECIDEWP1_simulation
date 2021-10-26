@@ -14,7 +14,7 @@ version_name = 'v1'
 simulation_run_name = 'communities_1km'
 
 # number ofc communities
-n_communities = 1
+n_communities = 1:10
 
 # number of species in each community - used only in the parameter file to allow runs with different numbers of species
 n_species = 50
@@ -38,11 +38,11 @@ sjob <- slurm_apply(slurm_adaptive_sample, pars,
                     nodes = nrow(pars), 
                     cpus_per_node = 1, 
                     submit = TRUE,
-                    slurm_options = list(partition = "test", # "short-serial-4hr",
+                    slurm_options = list(partition = "short-serial-4hr",
                                          time = "00:03:59",
                                          mem = "6000",
                                          output = "sim_spp_%a.out",
-                                         error = "sim_spp_%a.err"),
-                                         # account = "short4hr"),
+                                         error = "sim_spp_%a.err",
+                                         account = "short4hr"),
                     sh_template = "jasmin_submit_sh.txt")
 
