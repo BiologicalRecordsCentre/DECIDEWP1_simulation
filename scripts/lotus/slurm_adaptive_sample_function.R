@@ -1,6 +1,9 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, env_data, extent_crop = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, version_name, outPath){
+slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, background, env_data, extent_crop = NULL, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, version_name, outPath){
+  
+  # print the row number from the pars file
+  print(rownum)
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
   models <- list.files(path = as.character(sdm_path), pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
@@ -232,7 +235,7 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
     observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.5))
     observations <- observations[!is.na(observations$x),]#remove missing locs
-    observations[observations == 0] <- NA
+    if(any(observations$Observed==0)) observations[observations == 0] <- NA # set places where no individual was observed to NA - $Observed added to dea
     names(observations) <- c("lon", "lat", "Real", "Observed")
     new.obs[[i]] <- list()
     new.obs[[i]]$observations <- observations
@@ -242,8 +245,9 @@ slurm_adaptive_sample <- function(community_file, sdm_path, effort, background, 
   
   community_name <- strsplit(basename(as.character(community_file)),"\\.")[[1]][1]
   
-  dir.create(paste0(outPath, version_name, "adaptive_sampling_data/"), recursive = TRUE)
+  # # This is to create a separate location for adaptively sampled data if we want - probably not worth it.
+  # dir.create(paste0(outPath, version_name, "adaptive_sampling_data/"), recursive = TRUE)
   
-  saveRDS(community_AS, file = paste0(outPath, version_name, "adaptive_sampling_data/", community_name, "_AS_", method, ".rds"))
+  saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
   
 }
