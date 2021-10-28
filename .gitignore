@@ -7,6 +7,7 @@
 config.yml
 jasmin_submit_sh.txt
 *parameter_list*
+jasmin debugging adaptive sample function.R
 
 data/
 outputs/
