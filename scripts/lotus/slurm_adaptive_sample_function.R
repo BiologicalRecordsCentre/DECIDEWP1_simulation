@@ -37,12 +37,15 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if ((is.character(effort)|is.factor(effort)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
   
-  eff_df <- raster::as.data.frame(eff_weights, xy=TRUE, na.rm=TRUE)
+  eff_df <- raster::as.data.frame(eff_weights, xy=TRUE, na.rm=TRUE) 
+  
+  # un-comment when finished debugging - this will work as long as eff_layer only has one layer
+  colnames(eff_df) <- c('x', 'y', 'layer')
   
   #get species list from length of community list
   species_list <- vector()
@@ -178,6 +181,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   }
   
   if (method == "coverage"){
+    if(is.null(eff_layer)) stop("Cannot adaptively sample using method 'coverage' without specifying an existing sampling raster (i.e. currently eff_layer = NULL)")
     eff_zero <- raster::as.data.frame(eff_layer, xy=TRUE)
     empty_cells <- eff_zero[eff_zero$butterfly_1km_effort == 0 & !is.na(eff_zero$butterfly_1km_effort),]#1 because we added 1 to the eff_layer to allow sampling in previously unvisited squares
     new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
@@ -235,7 +239,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
     observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.5))
     observations <- observations[!is.na(observations$x),]#remove missing locs
-    if(any(observations$Observed==0)) observations[observations == 0] <- NA # set places where no individual was observed to NA - $Observed added to dea
+    if(nrow(observations)>0) observations[observations == 0] <- NA # set places where no individual was observed to NA - $Observed added to dea
     names(observations) <- c("lon", "lat", "Real", "Observed")
     new.obs[[i]] <- list()
     new.obs[[i]]$observations <- observations
