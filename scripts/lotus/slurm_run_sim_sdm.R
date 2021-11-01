@@ -187,9 +187,9 @@ dirs <- config::get("LOTUSpaths")
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
-n_communities = 1:20 # number of communities to go through
+n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = 'initial' # c("AS_none", "AS_uncertainty", "AS_prevalence", "AS_unc_plus_prev", "AS_unc_plus_recs", "AS_coverage")
+data_type = 'initial' # c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
 # version name from slurm_simulate_species
 version_name = 'v2'
@@ -198,7 +198,7 @@ version_name = 'v2'
 simulation_run_name = 'communities_1km'
 
 # # set commpath to something for testing (then delete 'dirs$')
-# commpath <- 'blob'
+dirs <- data.frame(commpath = 'blob')
 
 # pars data frame
 pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*length(data_type)),
