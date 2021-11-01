@@ -20,7 +20,7 @@ n_communities = 1:10
 n_species = 1:50
 
 # the adaptive sampling methods to use 
-method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
+method = "none" # c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
 
 # # set outpath and inputs for testing
 # outpath = 'broom'
@@ -39,8 +39,9 @@ pars <- data.frame(community_file = rep(paste0(dirs$outpath, version_name, simul
 
 pars$rownum <- 1:nrow(pars)
 
-sjob <- slurm_apply(slurm_adaptive_sample, pars, 
-                    jobname = 'adaptive_samp',
+sjob <- slurm_apply(slurm_adaptive_sample, 
+                    pars, 
+                    jobname = 'adaptive_samp_none_only',
                     nodes = nrow(pars), 
                     cpus_per_node = 1, 
                     submit = TRUE,

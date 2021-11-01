@@ -4,6 +4,8 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   
   # print the row number from the pars file
   print(rownum)
+  print(method)
+  print(community_file)
   
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
   models <- list.files(path = as.character(sdm_path), pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
@@ -34,10 +36,10 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   #set background if given, can indicate a layer in env_data or be a filepath to a raster
   if(is.numeric(background)){
     bg_layer <- env_extent[[background]]
-  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
+  } else if ((is.character(background)|is.factor(background)) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if ((is.character(background)|is.factor(background)) & grepl("\\.", background)) {bg_layer <- raster::raster(as.character(background))} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if ((is.character(effort)|is.factor(effort)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(effort)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if ((is.character(effort)|is.factor(effort)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
@@ -92,6 +94,9 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     
   }
   
+  # print a little output message
+  print(paste("Finished processing all species in community", strsplit(basename(as.character(community_file)),"\\.")[[1]][1]))
+  
   #average across all species in community (which can be modelled) to obtain a single prevalence, uncertainty and DECIDE score
   
   community_preds <- Filter(length, community_preds)
@@ -105,6 +110,19 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     #sample new locations according to cell weights
     new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights)
     new_coords <- community_scores[new_locs, 1:2]
+    
+    # print(cell_weights)
+    # print(new_coords)
+    # 
+    # print(bg_layer)
+    # print(class(background))
+    # print(class(eff_weights))
+    # print(any(is.na(eff_df)))
+    # print(any(is.na(cell_weights)))
+    # print(nrow(eff_df))
+    # print(length(new_locs))
+    # print(dim(new_coords))
+    # print(dim(na.omit(new_coords)))
   }
   
   if (method == "uncertainty"){    #merge with existing sampling bias if uptake isn't NULL
@@ -234,6 +252,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   
   new.obs <- list()
   for (i in 1:length(community)){
+    print(paste("NAs in coordinates? =", as.character(any(is.na(new_coords)))))
     observations <- data.frame(sp::coordinates(new_coords)[,1:2])
     observations$Real <- raster::extract(community[[i]]$pres_abs, observations)
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
