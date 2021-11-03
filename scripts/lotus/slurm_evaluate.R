@@ -111,7 +111,7 @@ slurm_evaluate <- function(community_folder, version_name, model, method){
                                             paste0(init_tab$initial_species, init_tab$initial_community))]
   
   # alternate format
-  write.csv(eval_table, file = paste0(community_folder, community_name, "_evaluation_table_alt.csv"))
+  write.csv(et, file = paste0(community_folder, community_name, "_evaluation_table_alt.csv"))
   
   
 } #end function
@@ -127,7 +127,7 @@ version_name = 'v2'
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
 
-n_communities = 1:50
+n_communities = 1:10
 
 n_species = 1:50
 
@@ -143,12 +143,12 @@ sdm_slurm <- slurm_apply(slurm_evaluate,
                          jobname = 'evaluate',
                          nodes = length(pars$community_folder),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'short-serial-4hr',
-                                              time = '0:59:59',
+                         slurm_options = list(partition = 'test',# 'short-serial-4hr',
+                                              time = '3:59:59',
                                               mem = 3000,
                                               output = "sim_eval_%a.out",
-                                              error = "sim_eval_%a.err",
-                                              account = "short4hr"),
+                                              error = "sim_eval_%a.err"),
+                                              # account = "short4hr"),
                          sh_template = "jasmin_submit_sh.txt",
                          submit = T)
 
