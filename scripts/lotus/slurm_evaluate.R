@@ -6,7 +6,7 @@ slurm_evaluate <- function(community_folder, version_name, model, method){
   
   models <- list.files(path = paste0(community_folder, version_name, 'species_models/'), pattern = paste0("(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
   
-  #identify community file based on naming structure
+  #path to initial community folder
   community_file <- paste0(community_folder, basename(as.character(community_folder)),"_initial.rds")
   
   #read in community data

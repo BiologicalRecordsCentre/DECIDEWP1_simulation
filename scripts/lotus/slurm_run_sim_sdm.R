@@ -198,7 +198,7 @@ version_name = 'v2'
 simulation_run_name = 'communities_1km'
 
 # # set commpath to something for testing (then delete 'dirs$')
-dirs <- data.frame(commpath = 'blob')
+# dirs <- data.frame(commpath = 'blob')
 
 # pars data frame
 pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*length(data_type)),
