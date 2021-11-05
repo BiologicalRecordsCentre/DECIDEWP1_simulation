@@ -1,6 +1,6 @@
 #' # Run all 10 simulated species on LOTUS
 #' 
-slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, version_name, simulation_run_name, n_communities, n_species){
+slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, community_version, AS_version, simulation_run_name, n_communities, n_species){
   #' 
   #' ## 1. Simulate distributions (or read in simulated spp)
   library(raster)
@@ -93,7 +93,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
   species_name <- gsub(pattern = ' ', replacement = '_', species) # get species name without space
   
   # create the output path to be in the community that the species belongs to
-  outPath <- paste0(dirs$outpath, version_name, simulation_run_name,'/', version_name, "community_",n_communities,"_", n_species, "_sim/")
+  outPath <- paste0(dirs$outpath, community_version, simulation_run_name,'/', community_version, "community_",n_communities,"_", n_species, "_sim/")
   
   #' Calculate very simple DECIDE score - prediction * standard deviation
   
@@ -103,23 +103,23 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
   if(writeRas == TRUE){
     
     # create a new location to save all rasters
-    dir.create(paste0(outPath, version_name, 'sdm_plots/'))
+    dir.create(paste0(outPath, community_version, 'sdm_plots/'))
     
     # save prediction raster
     writeRaster(x = rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), 
-                filename = paste0(outPath, version_name, 'sdm_plots/', model, "_SDMs_", species_name, "_meanpred.grd"),
+                filename = paste0(outPath, community_version, 'sdm_plots/', model, "_SDMs_", species_name, "_meanpred.grd"),
                 format = 'raster', overwrite = T)
     
     # save sd raster
     writeRaster(x = rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), 
-                filename = paste0(outPath, version_name, 'sdm_plots/', model, "_SDMs_", species_name, "_sdpred.grd"),
+                filename = paste0(outPath, community_version, 'sdm_plots/', model, "_SDMs_", species_name, "_sdpred.grd"),
                 format = 'raster', overwrite = T)
     
     
     #' Plot maps
     #' 
     #' 
-    png(paste0(outPath,  version_name, 'sdm_plots/', species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
+    png(paste0(outPath,  community_version, 'sdm_plots/', species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
     
     par(mfrow=c(3,2))
     par(mar = c(2,2,2,2))
@@ -151,7 +151,8 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
   community_name <- strsplit(as.character(spdata),"\\/")[[1]][10]
   
   # output of model to store
-  model_output <- list(version_name, 
+  model_output <- list(community_version,
+                       AS_version,
                        community = community_name, 
                        species = species_name,
                        model = model,
@@ -161,11 +162,11 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, ver
                        predictions = data.frame(x = hbv_df$x, y = hbv_df$y, mean = preds1$mean_predictions, sd = preds1$sd_predictions, DECIDE_score = DECIDE_score))
   
   # create a new directory to store species SDMs
-  dir.create(paste0(outPath, version_name, "species_models/"))
+  dir.create(paste0(outPath, community_version, "species_models/"))
   
   print("#####     Saving output     #####") ## to check if the process is hanging on lotus
-  
-  save(model_output, file = paste0(outPath, version_name, "species_models/",version_name, model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
+  #### Figure out how to save with the new AS version name
+  save(model_output, file = paste0(outPath, community_version, "species_models/", ifelse(data_type!='initial', paste0(AS_version, '_'), ''), community_version, model, "_SDMs_GBnew_", species_name, "_", data_type, ".rdata"))
   
   print("#####     Output saved     #####")
   
@@ -191,8 +192,13 @@ n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
 data_type = 'initial' # c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
-# version name from slurm_simulate_species
-version_name = 'v2'
+# name of the versions we are running - so we're not overwriting things
+# one for community-level which includes the community folders and species models folders
+community_version = 'v2'
+
+# One name for the adaptive sampling round to allow us to create different sampling methods of the same initial community
+# This doesn't get used if running only the initial model, but does get used when running the adaptive sampling methods.
+AS_version = 'asv2'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -203,8 +209,8 @@ simulation_run_name = 'communities_1km'
 # pars data frame
 pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*length(data_type)),
                    spdata = rep(sprintf(
-                     paste0(dirs$commpath, version_name, simulation_run_name,"/", version_name,
-                            "community_%i_%i_sim/", version_name, "community_%i_%i_sim_%s.rds"), 
+                     paste0(dirs$commpath, community_version, simulation_run_name,"/", community_version,
+                            "community_%i_%i_sim/", ifelse(data_type!='initial', paste0(AS_version, '_'), ''), community_version, "community_%i_%i_sim_%s.rds"), 
                      rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), 
                      rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), data_type
                    ), each = length(n_species)),
@@ -212,9 +218,9 @@ pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*l
                    data_type = rep(rep(data_type, length(n_communities)*length(models)), each = length(n_species)), 
                    writeRas = FALSE,
                    GB = TRUE,
-                   version_name = version_name,
+                   community_version = community_version,
                    simulation_run_name = simulation_run_name,
-                   
+                   AS_version = AS_version,
                    n_communities = rep(rep(rep(n_communities, each = length(models)), each = length(data_type)), each = length(n_species)),
                    n_species = max(n_species)
 )
@@ -231,7 +237,7 @@ dim(pars)
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          params = pars,
-                         jobname = paste0(version_name, '_sdm_simulated_species'),
+                         jobname = paste0(community_version, '_sdm_simulated_species'),
                          nodes = length(pars$index),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial',#-4hr',

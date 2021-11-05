@@ -1,6 +1,6 @@
 # function to generate new data based on existing locations and model
 
-slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, background, env_data, extent_crop = NULL, probability_weight_adj, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, version_name, outPath){
+slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, background, env_data, extent_crop = NULL, probability_weight_adj, weight_adj, model = c("rf", "gam", "lr"), method, n = 100, uptake = NULL, community_version, AS_version, outPath){
   
   # print the row number from the pars file
   print(rownum)
@@ -10,7 +10,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   #get rdata files with model outputs for each model/species (assuming communities are stored in separate folders) - only read initial models
   models <- list.files(path = as.character(sdm_path), pattern = paste0("(",paste(model, sep = "", collapse = "|"),")*initial.rdata"))
   
-  #import simulated community data
+  # import simulated community data
   community <- readRDS(as.character(community_file))
   
   #extract prevalence vector
@@ -271,6 +271,6 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   # # This is to create a separate location for adaptively sampled data if we want - probably not worth it.
   # dir.create(paste0(outPath, version_name, "adaptive_sampling_data/"), recursive = TRUE)
   
-  saveRDS(community_AS, file = paste0(outPath, community_name, "_AS_", method, ".rds"))
+  saveRDS(community_AS, file = paste0(outPath, AS_version, '_', community_name, "_AS_", method, ".rds"))
   
 }

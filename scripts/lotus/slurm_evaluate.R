@@ -121,8 +121,11 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-# name of the version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
-version_name = 'v2'
+# name of the community version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
+community_version = 'v2'
+
+# name of the adaptive sampling version we are looking to evaluat
+AS_version = 'asv2'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -132,7 +135,7 @@ n_communities = 1:10
 n_species = 1:50
 
 ## index file
-pars <- data.frame(community_folder = paste0(dirs$outpath, version_name, simulation_run_name, "/", version_name, sprintf("community_%i_%i_sim/", n_communities, max(n_species))),
+pars <- data.frame(community_folder = paste0(dirs$outpath, community_version, simulation_run_name, "/", community_version, sprintf("community_%i_%i_sim/", n_communities, max(n_species))),
                    model = "rf, gam, lr", 
                    method = "initial, none, uncertainty, prevalence, unc_plus_prev, unc_plus_recs, coverage",
                    version_name = version_name)
