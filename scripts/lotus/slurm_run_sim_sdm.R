@@ -256,6 +256,6 @@ sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                          submit = T)
 pars$BatchID <- sdm_slurm$jobid
 pars$JobID <- 0:(nrow(pars)-1)#slurm job ID
-write.csv(pars, "_rslurm_sdm_simulated_species/pars.csv")#to match to error files
+write.csv(pars, paste0('_rslurm_', community_version, '_sdm_simulated_species/pars.csv'))#to match to error files
 
 
