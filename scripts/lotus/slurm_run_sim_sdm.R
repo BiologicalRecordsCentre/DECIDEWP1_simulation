@@ -73,7 +73,13 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, com
   species <- sp_list[index]
   
   #subset envdata for species of interest  
-  env_data <- subset(hbv_y, subset = community[[index]]$variables)
+  env_data_full <- subset(hbv_y, subset = community[[index]]$variables)
+  
+  #use only a 2/3 proportion of the environmental data to run the models to reduce model fit
+  env_index <- sample(1:dim(env_data_full)[3], size = round(dim(env_data_full)[3]*(2/3)), replace = FALSE)
+  
+  #subset environmental data for the model run
+  env_data <- env_data_full[[env_index]]
   
   #set parameters
   model <- model
@@ -190,7 +196,7 @@ dirs <- config::get("LOTUSpaths")
 n_species = 1:50 # vector of number of species in each community
 n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = 'initial' # c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
+data_type = c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
 # name of the versions we are running - so we're not overwriting things
 # one for community-level which includes the community folders and species models folders
@@ -198,7 +204,7 @@ community_version = 'v2'
 
 # One name for the adaptive sampling round to allow us to create different sampling methods of the same initial community
 # This doesn't get used if running only the initial model, but does get used when running the adaptive sampling methods.
-AS_version = 'asv2'
+AS_version = 'asv1'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
