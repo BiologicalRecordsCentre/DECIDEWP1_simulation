@@ -9,7 +9,7 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 1. `slurm_simulate_species.R` 
 2. `slurm_run_sim_sdm.R`
 3. `slurm_adaptive_sample.R`
-4. rerun `slurm_run_sim_sdm.R`
+4. rerun `slurm_run_sim_sdm.R` with the AS methods added as parameters
 5. `slurm_evaluate.R`
 
 *To be continued...*
