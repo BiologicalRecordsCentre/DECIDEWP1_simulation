@@ -116,14 +116,17 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
   ### different format
   init_tab <- eval_table[eval_table$method =='initial',]
   colnames(init_tab) <- paste0('initial_', colnames(init_tab))
-  # et <- eval_table[eval_table!='initial',]
   et <- eval_table
   
-  et$inti_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
+  et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
+                                            paste0(init_tab$initial_species, init_tab$initial_community))]
+  et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
+                                              paste0(init_tab$initial_species, init_tab$initial_community))]
+  et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
                                             paste0(init_tab$initial_species, init_tab$initial_community))]
   
   # alternate format
-  write.csv(et, file = paste0(community_folder, community_name, "_evaluation_table_alt.csv"))
+  write.csv(et, file = paste0(community_folder, AS_version, '_', community_name, "_evaluation_table_alt.csv"))
   
   
 } #end function

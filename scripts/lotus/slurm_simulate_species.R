@@ -1,4 +1,4 @@
-simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,version_name, simulation_run_name){
+simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,community_name, simulation_run_name){
   
   library(raster)
   library(virtualspecies)
@@ -28,10 +28,10 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   #set background if given, can indicate a layer in env_data or be a filepath to a raster
   if(is.numeric(background)){
     bg_layer <- env_extent[[background]]
-  } else if (is.character(background) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if (is.character(background) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
+  } else if ((is.character(background)|is.factor(background)) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if ((is.character(background)|is.factor(background)) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if(is.character(effort) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if (is.character(effort) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(background)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if ((is.character(effort)|is.factor(background)) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
@@ -67,19 +67,19 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   
   community_name <- paste0("community_",seed,"_", n, "_sim")
   
-  if(!dir.exists(paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/"))){
-    dir.create(paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/"), recursive = T)
+  if(!dir.exists(paste0(outPath, community_name, simulation_run_name,"/", community_name, community_name,"/"))){
+    dir.create(paste0(outPath, community_name, simulation_run_name,"/", community_name, community_name,"/"), recursive = T)
   }
   
-  saveRDS(community, file = paste0(outPath, version_name, simulation_run_name,"/", version_name, community_name,"/", version_name, community_name, "_initial.rds"))
+  saveRDS(community, file = paste0(outPath, community_name, simulation_run_name,"/", community_name, community_name,"/", community_name, community_name, "_initial.rds"))
 }
 
 library(rslurm)
 
 dirs <- config::get("LOTUSpaths_sim")
 
-# a version name that follows all the way through the modelling
-version_name = 'v2'
+# a version name that follows all the way through the community
+community_name = 'v2'
 
 n_communities = 1:20
 
@@ -91,7 +91,7 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    n = 50, 
                    effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
                    background = "MeanDiRange",
-                   version_name = version_name,
+                   community_name = community_name,
                    simulation_run_name = 'communities_1km') # the name of the run name - don't change unless changing the resolution of the area of interest.
 
 sjob <- slurm_apply(simulate_species, pars, 
