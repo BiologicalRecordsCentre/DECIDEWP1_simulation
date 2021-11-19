@@ -28,10 +28,10 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   #set background if given, can indicate a layer in env_data or be a filepath to a raster
   if(is.numeric(background)){
     bg_layer <- env_extent[[background]]
-  } else if ((is.character(background)|is.factor(background)) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, background)} else if ((is.character(background)|is.factor(background)) & grepl("\\.", background)) {bg_layer <- raster::raster(background)} else {bg_layer <- NULL}
+  } else if ((is.character(background)|is.factor(background)) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, as.character(background))} else if ((is.character(background)|is.factor(background)) & grepl("\\.", background)) {bg_layer <- raster::raster(as.character(background))} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(background)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,effort)} else if ((is.character(effort)|is.factor(background)) & grepl("\\.", effort)) {eff_layer <- raster::raster(effort)} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(background)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,as.character(effort))} else if ((is.character(effort)|is.factor(background)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
@@ -88,7 +88,8 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    seed = n_communities, # community number
                    max_samp = 20000, 
                    n_env = 10, 
-                   n = 50, 
+                   n = 50,
+                   det_prob = 0.2,
                    effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
                    background = "MeanDiRange",
                    community_name = community_name,
