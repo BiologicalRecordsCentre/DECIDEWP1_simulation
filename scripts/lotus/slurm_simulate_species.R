@@ -1,4 +1,4 @@
-simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,community_name, simulation_run_name){
+simulate_species <- function(env_data, sample_across_species, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,community_name, simulation_run_name){
   
   library(raster)
   library(virtualspecies)
@@ -155,6 +155,7 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    n_env = 10, 
                    n = 50,
                    det_prob = 0.2,
+                   sample_across_species = TRUE,
                    effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
                    background = "MeanDiRange",
                    community_name = community_name,
