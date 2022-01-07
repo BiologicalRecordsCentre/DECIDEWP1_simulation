@@ -65,6 +65,71 @@ simulate_species <- function(env_data, extent = NULL, n = 10, outPath, seed = NU
   
   #return(community)
   
+  
+  ####   Optional code to sample the same locations across all species in a community
+  
+  ## sample the same locations across all species in a community
+  if(sample_across_species){
+    
+    ## first, get the sampling locations to be used across all species - biased by butterfly recording effort
+    ## use the first community as a template to get cell numbers and coordinates
+    
+    ## start by getting sampling locations biased by effort
+    # convert effort raster to data frame
+    eff_df <- as.data.frame(eff_weights, xy = T, na.rm = T)
+    
+    # get random sample of locations in effort layer - sampling bias only related to effort layer
+    # so it's okay to get coordinates from this layer only
+    row_ind <- sample(1:nrow(eff_df), size = max_samp, prob = eff_df$layer)
+    
+    # get the coordinates of sampled cells
+    sampled_locs <- eff_df[row_ind,]
+    
+    # use the sampled locations to get the corresponding cell numbers in the community file
+    # - easier to sample across communities using cell numbers rather than coordinates
+    # can't use cell numbers directly from the effort layer, just in case effort layer and community layer 
+    # are slightly different extents
+    cell_nums <- cellFromXY(community[[1]]$pres_abs, xy = sampled_locs[,1:2])
+    
+    # get presence absence at chosen locations for all communities
+    comms_sampled <- lapply(community, FUN = function(x) data.frame(sampled_locs[,1:2], Real = raster::extract(x=x$pres_abs, y=cell_nums)))
+    
+    # determine if species is detected - if a species is present at a sampling site,
+    # sample between a 0 and 1 according to the detection probability
+    comms_observed <- lapply(comms_sampled, function(com) {
+      
+      data.frame(com, 
+                 Observed = sapply(com$Real, FUN = function(x) ifelse(x == 1, sample(c(NA,1), size = 1, prob = c(1-det_prob, det_prob)), NA))
+      )
+      
+    })
+    
+    community2 <- list()
+    
+    ## bind it all back to the original data format in 'community'
+    for(c in 1:n){
+      
+      # get the species list from both sampling methods
+      comm_cross_spp <- comms_observed[[c]]
+      comm_each_spp <- community[[c]]
+      
+      community2[[c]] <- list(true_prob_occ = comm_each_spp$true_prob_occ, 
+                              pres_abs = comm_each_spp$pres_abs, 
+                              observations = comm_cross_spp[comm_cross_spp$Real == 1,], 
+                              variables = comm_each_spp$variables, 
+                              prevalence = comm_each_spp$prevalence)
+      
+      
+      
+    }
+    
+    ## replace original community file
+    community <- community2
+    
+  }
+  
+  
+  
   community_name <- paste0("community_",seed,"_", n, "_sim")
   
   if(!dir.exists(paste0(outPath, community_name, simulation_run_name,"/", community_name, community_name,"/"))){
