@@ -183,24 +183,16 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-# ## index file
-# # original method for creating the parameter file
-# pars <- data.frame(index = rep(1:50, 15), 
-#                    spdata = c(rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_none.rds"),150), rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_uncertainty.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_prevalence.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_unc_plus_recs.rds"),150),rep(paste0(dirs$commpath, "community_4_50_sim/community_4_50_sim_AS_coverage.rds"),150)), 
-#                    model = rep(c(rep("lr", 50), rep("gam",50), rep("rf", 50)),5), 
-#                    data_type = c(rep("AS_none", 150),rep("AS_uncertainty", 150), rep("AS_prevalence", 150), rep("AS_unc_plus_recs",150), rep("AS_coverage",150)), 
-#                    writeRas = FALSE, GB = TRUE)
-
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
 n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
+data_type = 'initial' # c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
 # name of the versions we are running - so we're not overwriting things
 # one for community-level which includes the community folders and species models folders
-community_version = 'v2'
+community_version = 'v3'
 
 # One name for the adaptive sampling round to allow us to create different sampling methods of the same initial community
 # This doesn't get used if running only the initial model, but does get used when running the adaptive sampling methods.

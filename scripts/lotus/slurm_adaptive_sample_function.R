@@ -230,19 +230,25 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     
     if(is.null(uptake)){
       cell_weights <- comb_df$unc_recs/sum(comb_df$unc_recs, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_coords <- community_scores[new_locs, 1:2]
     } else if(!is.null(uptake)) {
       # combine with the specified effort layer dataset above so can see what happens
       # if people carry on with business as usual instead of doing the sampling
       comb_df_eff <- merge(eff_df, comb_df, by = c("x", "y"), all.x = TRUE)
+      comb_df_eff[,3:8] <- apply(comb_df_eff[,3:8],2,FUN = function(x) {x/max(x, na.rm=TRUE)})
       comb_df_eff$comb_weight <- (comb_df_eff$layer*(1-uptake))+(comb_df_eff$unc_recs*uptake) # change the influence of adaptive sampling
       cell_weights <- comb_df_eff$comb_weight/sum(comb_df_eff$comb_weight, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs <- sample(1:nrow(comb_df_eff), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_coords <- community_scores[new_locs, 1:2]
     }
     
-    #assign NA values the average weight
-    cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
-    #sample new locations according to cell weights
-    new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
-    new_coords <- community_scores[new_locs, 1:2]
   }
   
   
@@ -252,7 +258,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   
   new.obs <- list()
   for (i in 1:length(community)){
-    print(paste("NAs in coordinates? =", as.character(any(is.na(new_coords)))))
+    # print(paste("NAs in coordinates? =", as.character(any(is.na(new_coords)))))
     observations <- data.frame(sp::coordinates(new_coords)[,1:2])
     observations$Real <- raster::extract(community[[i]]$pres_abs, observations)
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
