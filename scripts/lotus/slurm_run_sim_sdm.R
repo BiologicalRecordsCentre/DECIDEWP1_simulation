@@ -188,7 +188,7 @@ dirs <- config::get("LOTUSpaths")
 n_species = 1:50 # vector of number of species in each community
 n_communities = 1:10 # number of communities to go through
 models = c('lr', 'gam', 'rf')
-data_type = 'initial' # c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
+data_type = c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
 # name of the versions we are running - so we're not overwriting things
 # one for community-level which includes the community folders and species models folders

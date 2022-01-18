@@ -9,12 +9,12 @@
 reformat_data <- function(sim_species_out, year=2015, species_name='Sp'){
   
   return(do.call(rbind, 
-                 lapply(1:length(sim_species_out), FUN = function(x) {
+                 lapply(1:length(sim_species_out), FUN = function(i) {
                    
-                   sim_species_out[[x]]$observations %>% 
+                   sim_species_out[[i]]$observations %>% 
                      filter(Observed==1) %>% 
                      mutate(year = year,
-                            species = paste0(species_name, x))
+                            species = paste0(species_name, i))
                    
                  })))
   

@@ -9,7 +9,7 @@ dirs <- config::get("LOTUSpaths_AS")
 
 # name of the versions we are running - so we're not overwriting things
 # Three different versions, one for community-level which includes the community folders and species models folders
-community_version = 'v2'
+community_version = 'v3'
 
 # # one for the initial model - will almost certainly always be the same as the community_folder - currently not included
 # # because the community is essentially only the initial .rds file 

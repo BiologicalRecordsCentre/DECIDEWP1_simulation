@@ -1,3 +1,4 @@
+
 simulate_species <- function(env_data, sample_across_species, extent = NULL, n = 10, outPath, seed = NULL, n_env = NULL, beta = 0.5, alpha = -0.05, max_samp = 1000, det_prob = 0.5, effort = NULL, weight_adj = 1, background = NULL,community_version_name, simulation_run_name){
   
   library(raster)
@@ -84,6 +85,9 @@ simulate_species <- function(env_data, sample_across_species, extent = NULL, n =
     
     # get the coordinates of sampled cells
     sampled_locs <- eff_df[row_ind,]
+    
+    # rename columns
+    colnames(sampled_locs) <- c("lon", "lat", "layer")
     
     # use the sampled locations to get the corresponding cell numbers in the community file
     # - easier to sample across communities using cell numbers rather than coordinates

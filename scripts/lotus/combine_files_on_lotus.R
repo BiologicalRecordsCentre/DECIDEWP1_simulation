@@ -9,7 +9,7 @@ dirs <- config::get("LOTUSpaths")
 simulation_run_name = 'communities_1km'
 
 # name of the community version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
-community_version = 'v2'
+community_version = 'v3'
 
 # name of the adaptive sampling version we are looking to evaluate
 AS_version = 'asv1'
