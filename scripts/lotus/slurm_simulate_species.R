@@ -150,7 +150,7 @@ dirs <- config::get("LOTUSpaths_sim")
 # a version name that follows all the way through the community
 community_version_name = 'v3'
 
-n_communities = 1:20
+n_communities = 21:50
 
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 

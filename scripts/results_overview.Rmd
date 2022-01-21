@@ -1,0 +1,198 @@
+---
+title: "Results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(patchwork)
+
+```
+
+
+```{r data}
+
+cdf <- read.csv('../outputs/asv1_v3combined_outputs_comm1_10_spp50.csv', stringsAsFactors = FALSE)
+
+```
+
+Only have results for the first ten communities. These are the differences in the code compared to last round of results:
+
+* initial sampling done across all species in a communities (same locations for each species)
+* reduced detectability from 0.5 -> 0.2
+* added rescaling code to uncertainty + recs adaptive sampling method to give equal weighting to underlying biases and AS layer
+
+
+## calculate differences from initial model
+
+For each species in each community subtract the evaluation metrics of the initial model from those of the models run on adaptive sampling data (`AS_method_models - initial_method_models`).
+
+```{r calculate_differences}
+
+init_tab <- cdf[cdf$method =='initial',]
+colnames(init_tab) <- paste0('initial_', colnames(init_tab))
+et <- cdf
+
+et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
+                                            paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_mean_sd <- init_tab$initial_mean_sd[match(paste0(et$species, et$community),
+                                                  paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_max_sd <- init_tab$initial_max_sd[match(paste0(et$species, et$community),
+                                                paste0(init_tab$initial_species, init_tab$initial_community))]
+
+
+## get differences
+et <- et %>% 
+  mutate(delta_mse = mse - init_mse,
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+```
+
+## Community-level results
+
+Adaptive sampling was done across across all species in a community, so we should probably analyse results at a community level. These are the average evaluation metrics across all species in a community.
+
+```{r aggregate_community}
+
+## average across communities
+comm_df <- et %>%
+  group_by(community, method) %>%
+  summarise(mse = mean(mse, na.rm = T),
+            corr = mean(corr, na.rm = T),
+            auc = mean(auc, na.rm = T),
+            mean_sd = mean(mean_sd, na.rm = T),
+            max_sd = max(max_sd, na.rm = T),
+            prev = median(prevalence, na.rm = T),
+            init_mse = mean(init_mse, na.rm = T),
+            init_corr = mean(init_corr, na.rm = T),
+            init_auc = mean(init_auc, na.rm = T),
+            init_mean_sd = mean(init_mean_sd, na.rm = T),
+            init_max_sd = max(init_max_sd, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(delta_mse = mse - init_mse,
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+
+```
+
+### MSE, AUC and Correlation
+
+Figures of the difference in MSE, AUC and Correlation between adaptively sampled models and initial models.
+
+```{r comm_plots_mse_auc_corr}
+
+c1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse)) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1))
+
+
+c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc)) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta auc (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1))
+
+
+c3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr)) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta corr (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1))
+
+c1+c2+c3
+
+```
+
+
+Figures of the difference in mean and maximum predictive variance between adaptively sampled models and initial models.
+
+
+```{r comm_plots_mean_max_var}
+
+
+c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_sd)) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta mean predictive\nvariance (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1))
+
+c5 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_max_sd)) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta max predictive\nvariance (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1))
+
+c4|c5
+
+
+```
+
+
+## plot the raw results
+
+I.e. not the results of averaged across all species in a community.
+
+```{r raw_values}
+
+
+## raw values
+r1 <- ggplot(data = et, aes(x=method, y = mse)) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw MSE') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+r2 <- ggplot(data = et, aes(x=method, y = corr)) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw corr') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+r3 <- ggplot(data = et, aes(x=method, y = auc)) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw auc') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+r4 <- ggplot(data = et, aes(x=method, y = mean_sd)) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw mean_sd') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+r5 <- ggplot(data = et, aes(x=method, y = max_sd)) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw max_sd') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+
+
+r1|r2|r3
+
+r4|r5
+
+
+```
+
+
+

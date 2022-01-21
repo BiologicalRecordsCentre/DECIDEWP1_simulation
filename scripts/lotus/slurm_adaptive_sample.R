@@ -24,7 +24,7 @@ AS_version = 'asv1'
 simulation_run_name = 'communities_1km'
 
 # number ofc communities
-n_communities = 1:10
+n_communities = 11:50
 
 # number of species in each community - used only in the parameter file to allow runs with different numbers of species
 n_species = 1:50
