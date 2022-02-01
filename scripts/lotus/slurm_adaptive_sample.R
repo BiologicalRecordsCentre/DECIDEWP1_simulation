@@ -18,13 +18,13 @@ community_version = 'v3'
 # and an adaptive sampling version, which is if we want to run the adaptive sampling 
 # process more than once - these outputs are stored in the same place as the old outputs
 # must always be prefixed by asv
-AS_version = 'asv1'
+AS_version = 'asv3'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
 
 # number ofc communities
-n_communities = 11:50
+n_communities = 1:50
 
 # number of species in each community - used only in the parameter file to allow runs with different numbers of species
 n_species = 1:50
@@ -33,8 +33,8 @@ n_species = 1:50
 method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage") 
 
 # # set outpath and inputs for testing
-# outpath = 'broom'
-# inputs = 'handle'
+# dirs <- data.frame(outpath = 'broom',
+#                    inputs = 'handle')
 
 pars <- data.frame(community_file = rep(paste0(dirs$outpath, community_version, simulation_run_name, "/", community_version, sprintf(paste0("community_%i_%i_sim/", community_version, "community_%i_%i_sim_initial.rds"), n_communities, max(n_species), n_communities, max(n_species))), each = length(method)), 
                    sdm_path = rep(paste0(dirs$outpath, community_version, simulation_run_name, "/", community_version, sprintf("community_%i_%i_sim/", n_communities, max(n_species)), community_version, "species_models/"), each = length(method)), 
@@ -43,7 +43,8 @@ pars <- data.frame(community_file = rep(paste0(dirs$outpath, community_version, 
                    env_data = paste0(dirs$inputs,"envdata_1km_no_corr_noNA.grd"),
                    probability_weight_adj = 10,
                    weight_adj = 1, 
-                   method = method, 
+                   method = method,
+                   uptake = 1,
                    n = 2000,
                    community_version = community_version,
                    AS_version = AS_version,
@@ -52,6 +53,7 @@ pars <- data.frame(community_file = rep(paste0(dirs$outpath, community_version, 
 pars$rownum <- 1:nrow(pars)
 
 dim(pars)
+head(pars)
 
 sjob <- slurm_apply(slurm_adaptive_sample, 
                     pars, 

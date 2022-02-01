@@ -12,9 +12,9 @@ simulation_run_name = 'communities_1km'
 community_version = 'v3'
 
 # name of the adaptive sampling version we are looking to evaluate
-AS_version = 'asv1'
+AS_version = 'asv2'
 
-n_communities = 1:10
+n_communities = 1:50
 
 n_species = 1:50
 

@@ -15,7 +15,7 @@ library(patchwork)
 
 ```{r data}
 
-cdf <- read.csv('../outputs/asv1_v3combined_outputs_comm1_10_spp50.csv', stringsAsFactors = FALSE)
+cdf <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE)
 
 ```
 

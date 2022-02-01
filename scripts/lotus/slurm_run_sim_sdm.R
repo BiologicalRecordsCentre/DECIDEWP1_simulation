@@ -187,7 +187,7 @@ source('scripts/slurm_run_sim_sdm_function.R')
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
-n_communities = 31:40 # number of communities to go through ## done 1-10, done 11:20, done 21:30, 31:40 running
+n_communities = 12:22 # number of communities to go through # can submit 11 at a time ## done 1-11
 models = c('lr', 'gam', 'rf')
 data_type = c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 
@@ -197,7 +197,7 @@ community_version = 'v3'
 
 # One name for the adaptive sampling round to allow us to create different sampling methods of the same initial community
 # This doesn't get used if running only the initial model, but does get used when running the adaptive sampling methods.
-AS_version = 'asv1'
+AS_version = 'asv3'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
