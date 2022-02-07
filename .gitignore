@@ -8,6 +8,9 @@ config.yml
 jasmin_submit_sh.txt
 *parameter_list*
 jasmin debugging adaptive sample function.R
+testing_branch_simulate_species.R
+very rough evaluation scripts.R
+test.Rmd
 
 data/
 outputs/
