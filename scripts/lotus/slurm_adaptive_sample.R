@@ -11,14 +11,10 @@ dirs <- config::get("LOTUSpaths_AS")
 # Three different versions, one for community-level which includes the community folders and species models folders
 community_version = 'v3'
 
-# # one for the initial model - will almost certainly always be the same as the community_folder - currently not included
-# # because the community is essentially only the initial .rds file 
-# initial_community_version = 'v2'
-
 # and an adaptive sampling version, which is if we want to run the adaptive sampling 
 # process more than once - these outputs are stored in the same place as the old outputs
 # must always be prefixed by asv
-AS_version = 'asv3'
+AS_version = 'asv5'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -44,7 +40,7 @@ pars <- data.frame(community_file = rep(paste0(dirs$outpath, community_version, 
                    probability_weight_adj = 10,
                    weight_adj = 1, 
                    method = method,
-                   uptake = 1,
+                   uptake = 0.01,
                    n = 2000,
                    community_version = community_version,
                    AS_version = AS_version,

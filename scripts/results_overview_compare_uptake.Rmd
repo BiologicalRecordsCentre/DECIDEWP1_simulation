@@ -1,0 +1,314 @@
+---
+title: "Results comparing uptake"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, fig.width = 12, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(patchwork)
+
+```
+
+
+```{r data, echo = FALSE}
+
+cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>%
+  mutate(uptake = 'NULL')
+
+cdf_low_uptake <- read.csv('../outputs/asv4_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
+  mutate(uptake = 0.1)
+
+cdf_half_uptake <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
+  mutate(uptake = 0.5)
+
+cdf_full_uptake <- read.csv('../outputs/asv3_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
+  mutate(uptake = 1)
+
+cdf <- rbind(#cdf_NULL_uptake, 
+  cdf_low_uptake,
+  cdf_half_uptake, cdf_full_uptake)
+
+```
+
+These are the results for 50 communities at three different uptake values. These are the differences in the code compared to last round of results:
+
+* initial sampling done across all species in a community (same locations for each species within the same community)
+* reduced detectability from 0.5 -> 0.2
+* added rescaling code to uncertainty + recs adaptive sampling method to give equal weighting to underlying biases and AS layer
+* fixed a mistake in the evaluation script
+* have run the code for three different uptake values, 0.1, 0.5, 1 
+
+
+## calculate differences from initial model
+
+For each species in each community subtract the evaluation metrics of the initial model from those of the models run on adaptive sampling data (`AS_method_models - initial_method_models`).
+
+```{r calculate_differences}
+
+init_tab <- cdf[cdf$method =='initial',]
+colnames(init_tab) <- paste0('initial_', colnames(init_tab))
+et <- cdf
+
+et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
+                                            paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_mean_sd <- init_tab$initial_mean_sd[match(paste0(et$species, et$community),
+                                                  paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_max_sd <- init_tab$initial_max_sd[match(paste0(et$species, et$community),
+                                                paste0(init_tab$initial_species, init_tab$initial_community))]
+
+
+## get differences
+et <- et %>% 
+  mutate(delta_mse = mse - init_mse,
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+```
+
+## Community-level results
+
+Adaptive sampling was done across across all species in a community, so we should probably analyse results at a community level. These are the average evaluation metrics across all species in a community.
+
+```{r aggregate_community}
+
+## average across communities
+comm_df <- et %>%
+  group_by(community, method, uptake) %>%
+  summarise(mse = mean(mse, na.rm = T),
+            corr = mean(corr, na.rm = T),
+            auc = mean(auc, na.rm = T),
+            mean_sd = mean(mean_sd, na.rm = T),
+            max_sd = max(max_sd, na.rm = T),
+            prev = median(prevalence, na.rm = T),
+            init_mse = mean(init_mse, na.rm = T),
+            init_corr = mean(init_corr, na.rm = T),
+            init_auc = mean(init_auc, na.rm = T),
+            init_mean_sd = mean(init_mean_sd, na.rm = T),
+            init_max_sd = max(init_max_sd, na.rm = T)) %>%
+  ungroup() %>% 
+  mutate(delta_mse = mse - init_mse,
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+
+```
+
+### MSE, AUC and Correlation
+
+Figures of the difference in MSE, AUC and Correlation between adaptively sampled models and initial models.
+
+```{r comm_plots_mse_auc_corr, echo = FALSE}
+
+c1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta auc (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+c3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta corr (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+c1+c2+c3 + plot_layout(guides = 'collect')
+
+```
+
+
+Figures of the difference in mean and maximum predictive variance between adaptively sampled models and initial models.
+
+
+```{r comm_plots_mean_max_var, echo = FALSE}
+
+
+c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_sd, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta mean predictive\nvariance (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+c5 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_max_sd, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  xlab('') + ylab('delta max predictive\nvariance (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+c4|c5
+
+
+```
+
+## Investigate species-level models
+
+### prevalence
+
+```{r indiv_plots_mse_auc_corr_prev, warning = F, message = F, echo = FALSE, fig.width = 12}
+
+prc1 <- ggplot(et[et$method!='initial',], 
+               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
+  theme_classic() + 
+  # ylim(-0.02, 0.015) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('Prevalence') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_colour_discrete(name = 'Uptake') +
+  scale_shape_discrete(name = 'Uptake') +
+  scale_linetype_discrete(name = 'Uptake') +
+  facet_wrap(~method)
+
+
+prc2 <- ggplot(et[et$method!='initial',], 
+               aes(x=prevalence, y = delta_auc, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
+  theme_classic() + 
+  # ylim(-0.01, 0.04) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('Prevalence') + ylab('delta auc (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_colour_discrete(name = 'Uptake') +
+  scale_shape_discrete(name = 'Uptake') +
+  scale_linetype_discrete(name = 'Uptake') +
+  facet_wrap(~method)
+
+
+prc3 <- ggplot(et[et$method!='initial',], 
+               aes(x=prevalence, y = delta_corr, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
+  theme_classic() + 
+  # ylim(-0.05, 0.075) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('Prevalence') + ylab('delta corr (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_colour_discrete(name = 'Uptake') +
+  scale_shape_discrete(name = 'Uptake') +
+  scale_linetype_discrete(name = 'Uptake') +
+  facet_wrap(~method)
+
+prc1/prc2/prc3 + plot_layout(guides = 'collect')
+
+
+
+ ggplot(et[et$method!='initial',], 
+               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
+  # geom_point(alpha = 0.5) +
+  geom_smooth(se = T, alpha = 0.1) +
+  theme_classic() + 
+  # ylim(-0.02, 0.015) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('Prevalence') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_colour_discrete(name = 'uptake') +
+  scale_shape_discrete(name = 'uptake') +
+  scale_linetype_discrete(name = 'uptake') +
+  facet_wrap(~factor(method))
+
+```
+
+### Do bad models improve more?
+
+No...
+
+```{r good_vs_bad}
+
+ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = factor(uptake))) +
+  # geom_point() +
+  geom_smooth() +
+  facet_wrap(~method) +
+  theme_bw() +
+  xlab('MSE initial model') + 
+  ylab('MSE final model') +
+  scale_color_discrete(name = 'Uptake')
+
+
+
+```
+
+
+
+## plot the raw results
+
+I.e. not the results of averaged across all species in a community.
+
+```{r raw_values, echo = FALSE}
+
+
+## raw values
+r1 <- ggplot(data = et, aes(x=method, y = mse, fill = factor(uptake))) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw MSE') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+r2 <- ggplot(data = et, aes(x=method, y = corr, fill = factor(uptake))) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw corr') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+r3 <- ggplot(data = et, aes(x=method, y = auc, fill = factor(uptake))) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw auc') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+r4 <- ggplot(data = et, aes(x=method, y = mean_sd, fill = factor(uptake))) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw mean_sd') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+r5 <- ggplot(data = et, aes(x=method, y = max_sd, fill = factor(uptake))) +
+  geom_boxplot() +
+  xlab('') + ylab('Raw max_sd') +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+r1|r2|r3
+
+r4|r5
+
+
+```
+
+
+

@@ -5,7 +5,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
   model_types <- sapply(strsplit(as.character(model),","), function(x) trimws(x))
   
   models <- list.files(path = paste0(community_folder, community_version, 'species_models/'), 
-                       pattern = paste0(AS_version, "*.*(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
+                       pattern = paste0(AS_version, "_*.*(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
   
   # read in initial models - needed because of new naming system
   init_mods <- list.files(path = paste0(community_folder, community_version, 'species_models/'), 

@@ -5,7 +5,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
   model_types <- sapply(strsplit(as.character(model),","), function(x) trimws(x))
   
   models <- list.files(path = paste0(community_folder, community_version, 'species_models/'), 
-                       pattern = paste0(AS_version, "*.*(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
+                       pattern = paste0(AS_version, "_*.*(",paste(model_types, sep = "", collapse = "|"),")*.*.rdata"))
   
   # read in initial models - needed because of new naming system
   init_mods <- list.files(path = paste0(community_folder, community_version, 'species_models/'), 
@@ -141,8 +141,8 @@ dirs <- config::get("LOTUSpaths")
 # name of the community version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
 community_version = 'v3'
 
-# name of the adaptive sampling version we are looking to evaluat
-AS_version = 'asv1'
+# name of the adaptive sampling version we are looking to evaluate
+AS_version = 'asv4'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -161,7 +161,7 @@ pars <- data.frame(community_folder = paste0(dirs$outpath, community_version, si
 #### slurm apply call
 sdm_slurm <- slurm_apply(slurm_evaluate,
                          params = pars,
-                         jobname = 'evaluate',
+                         jobname = paste('evaluate_community', community_version, AS_version, collapse = '_'),
                          nodes = length(pars$community_folder),
                          cpus_per_node = 1,
                          slurm_options = list(partition = 'short-serial-4hr',

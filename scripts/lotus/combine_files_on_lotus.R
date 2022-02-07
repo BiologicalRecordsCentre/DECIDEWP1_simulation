@@ -12,7 +12,7 @@ simulation_run_name = 'communities_1km'
 community_version = 'v3'
 
 # name of the adaptive sampling version we are looking to evaluate
-AS_version = 'asv2'
+AS_version = 'asv4'
 
 n_communities = 1:50
 
@@ -25,7 +25,8 @@ out_files <- list()
 
 for(i in 1:length(community_folder)) {
   
-  f_to_read <- list.files(path = community_folder[i], pattern = paste0(AS_version, "*.*_evaluation_table_alt.csv"), full.names = TRUE)
+  f_to_read <- list.files(path = community_folder[i], pattern = paste0(AS_version, "_*.*_evaluation_table_alt.csv"), full.names = TRUE)
+  f_to_read <- grep(AS_version, f_to_read, value = TRUE)
   
   if(length(f_to_read)==0) next
   

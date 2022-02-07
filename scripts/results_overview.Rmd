@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
 library(patchwork)
@@ -15,11 +15,11 @@ library(patchwork)
 
 ```{r data}
 
-cdf <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE)
+cdf <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE)
 
 ```
 
-Only have results for the first ten communities. These are the differences in the code compared to last round of results:
+We have the results for fifty communities. These are the differences in the code compared to last round of results:
 
 * initial sampling done across all species in a communities (same locations for each species)
 * reduced detectability from 0.5 -> 0.2
