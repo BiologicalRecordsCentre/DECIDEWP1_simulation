@@ -12,7 +12,7 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 4. rerun `slurm_run_sim_sdm.R` with the AS methods added as parameters
 5. `slurm_evaluate.R`
 
-## Version explanationa
+## Version explanation
 
 - v1
 - v2
