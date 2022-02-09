@@ -12,4 +12,15 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 4. rerun `slurm_run_sim_sdm.R` with the AS methods added as parameters
 5. `slurm_evaluate.R`
 
+## Version explanation
+
+- v1
+- v2
+- v3_asv1: community 1:50 run on 14/01/2022 with mechanism to sample across all species and with detectability set to 0.2. For adaptive sampling: `uptake = NULL`. Final filename `= asv1_v3combined_outputs_comm1_50_spp50.csv`
+- v3_asv2: Same communities as v3, but adaptive sampling `uptake = 0.5`; filename `= asv2_v3combined_outputs_comm1_50_spp50.csv`. Started adaptive sampling 31/01/22, finished 1/2/22. 
+- v3_asv3: Same communities as v3, but adaptive sampling `uptake = 1`. Started adaptive sampling 1/2/22, finished 2/2/2022. Filename `= asv3_v3combined_outputs_comm1_50_spp50.csv`.
+- v3_asv4: Same communities as v3, but adaptive sampling `uptake = 0.1`. Started adaptive sampling running 2/2/22. Finished 3/2/2022. Filename `= asv4_v3combined_outputs_comm1_50_spp50.csv`.
+- v3_asv5: Same communities as v3, but adaptive sampling `uptake = 0.01`. Started adaptive sampling running 4/2/22. Finished 9/2/22. Filename `= asv5_v3combined_outputs_comm1_50_spp50.csv`.
+- v3_asv6: same communities as v3, but only running models on communities 1:11. `uptake = 0.01`. Noticed mistake in adaptive sampling function that detectability is set to 0.2. This will effect results relative to 'none' method. Started AS (for all 50 communities) on 9/2/22
+
 *To be continued...*
