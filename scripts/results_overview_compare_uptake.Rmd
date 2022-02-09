@@ -5,10 +5,12 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE, fig.width = 12, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, message = FALSE, warning = FALSE)
 
 library(tidyverse)
 library(patchwork)
+
+write = FALSE
 
 ```
 
@@ -18,6 +20,9 @@ library(patchwork)
 cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>%
   mutate(uptake = 'NULL')
 
+cdf_very_low_uptake <- read.csv('../outputs/asv5_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
+  mutate(uptake = 0.01)
+
 cdf_low_uptake <- read.csv('../outputs/asv4_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
   mutate(uptake = 0.1)
 
@@ -25,10 +30,10 @@ cdf_half_uptake <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.c
   mutate(uptake = 0.5)
 
 cdf_full_uptake <- read.csv('../outputs/asv3_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 1)
+  mutate(uptake = 1) 
 
 cdf <- rbind(#cdf_NULL_uptake, 
-  cdf_low_uptake,
+  cdf_very_low_uptake, cdf_low_uptake,
   cdf_half_uptake, cdf_full_uptake)
 
 ```
@@ -136,7 +141,15 @@ c3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, 
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
 
-c1+c2+c3 + plot_layout(guides = 'collect')
+comb_plot_comm <- c1+c2+c3 + plot_layout(guides = 'collect')
+comb_plot_comm 
+
+if(write) {
+  
+  ggsave(comb_plot_comm, filename = '../outputs/plots/combined_delta_plot_uptake.tiff', 
+         width = 12, height = 5)
+  
+}
 
 ```
 
@@ -176,8 +189,8 @@ c4|c5
 
 prc1 <- ggplot(et[et$method!='initial',], 
                aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  geom_point(alpha = 0.5) +
-  # geom_smooth(se = T) +
+  # geom_point(alpha = 0.5) +
+  geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.02, 0.015) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -191,8 +204,8 @@ prc1 <- ggplot(et[et$method!='initial',],
 
 prc2 <- ggplot(et[et$method!='initial',], 
                aes(x=prevalence, y = delta_auc, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  geom_point(alpha = 0.5) +
-  # geom_smooth(se = T) +
+  # geom_point(alpha = 0.5) +
+  geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.01, 0.04) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -206,8 +219,8 @@ prc2 <- ggplot(et[et$method!='initial',],
 
 prc3 <- ggplot(et[et$method!='initial',], 
                aes(x=prevalence, y = delta_corr, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  geom_point(alpha = 0.5) +
-  # geom_smooth(se = T) +
+  # geom_point(alpha = 0.5) +
+  geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.05, 0.075) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -218,12 +231,12 @@ prc3 <- ggplot(et[et$method!='initial',],
   scale_linetype_discrete(name = 'Uptake') +
   facet_wrap(~method)
 
-prc1/prc2/prc3 + plot_layout(guides = 'collect')
+prc1|prc2|prc3 + plot_layout(guides = 'collect')
 
 
 
- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
+ggplot(et[et$method!='initial',], 
+       aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
   # geom_point(alpha = 0.5) +
   geom_smooth(se = T, alpha = 0.1) +
   theme_classic() + 
@@ -257,6 +270,100 @@ ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = f
 
 ```
 
+```{r}
+
+# View(et)
+
+library(ggridges)
+
+ggplot(et, aes(x = community, y = delta_mse)) +
+  geom_boxplot()
+
+ggplot(data = et[et$method!='initial',], aes(x =  delta_mse, y = factor(uptake), fill = factor(uptake)))+
+  geom_density_ridges(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = 'dashed') +
+  theme_bw() +
+  facet_wrap(~method, scales = 'free')
+
+```
+
+### problem with community 22?
+
+```{r problem_comm}
+
+ggplot(et[et$uptake == 0.01,], aes(x = community, y = delta_mse)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.01,], aes(x = community, y = delta_auc)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.01,], aes(x = community, y = delta_corr)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ggplot(et[et$uptake == 0.1,], aes(x = community, y = delta_mse)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.1,], aes(x = community, y = delta_auc)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.1,], aes(x = community, y = delta_corr)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ggplot(et[et$uptake == 0.5,], aes(x = community, y = delta_mse)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.5,], aes(x = community, y = delta_auc)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+ggplot(et[et$uptake == 0.5,], aes(x = community, y = delta_corr)) +
+  geom_boxplot() + 
+  theme_bw() +
+  facet_wrap(~uptake) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+```
+
+
+```{r}
+
+head(et)
+?pivot_longer
+
+et %>% 
+  pivot_longer(cols = 4:8) %>% 
+  ggplot(aes(x = prevalence, y = value, colour = method)) +
+  geom_smooth() +
+  facet_wrap(~name)
+
+```
 
 
 ## plot the raw results

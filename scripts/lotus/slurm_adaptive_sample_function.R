@@ -110,19 +110,6 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     #sample new locations according to cell weights
     new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
     new_coords <- community_scores[new_locs, 1:2]
-    
-    # print(cell_weights)
-    # print(new_coords)
-    # 
-    # print(bg_layer)
-    # print(class(background))
-    # print(class(eff_weights))
-    # print(any(is.na(eff_df)))
-    # print(any(is.na(cell_weights)))
-    # print(nrow(eff_df))
-    # print(length(new_locs))
-    # print(dim(new_coords))
-    # print(dim(na.omit(new_coords)))
   }
   
   if (method == "uncertainty"){    #merge with existing sampling bias if uptake isn't NULL
@@ -262,7 +249,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     observations <- data.frame(sp::coordinates(new_coords)[,1:2])
     observations$Real <- raster::extract(community[[i]]$pres_abs, observations)
     observations <- observations[observations$Real == 1,]#remove absences to create presence-only data?
-    observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.5))
+    observations$Observed <- observations$Real * (rbinom(nrow(observations),1,0.2)) # are species detected?
     observations <- observations[!is.na(observations$x),]#remove missing locs
     if(nrow(observations)>0) observations[observations == 0] <- NA # set places where no individual was observed to NA - $Observed added to dea
     names(observations) <- c("lon", "lat", "Real", "Observed")
