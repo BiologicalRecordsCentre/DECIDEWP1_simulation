@@ -21,6 +21,6 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 - v3_asv3: Same communities as v3, but adaptive sampling `uptake = 1`. Started adaptive sampling 1/2/22, finished 2/2/2022. Filename `= asv3_v3combined_outputs_comm1_50_spp50.csv`.
 - v3_asv4: Same communities as v3, but adaptive sampling `uptake = 0.1`. Started adaptive sampling running 2/2/22. Finished 3/2/2022. Filename `= asv4_v3combined_outputs_comm1_50_spp50.csv`.
 - v3_asv5: Same communities as v3, but adaptive sampling `uptake = 0.01`. Started adaptive sampling running 4/2/22. Finished 9/2/22. Filename `= asv5_v3combined_outputs_comm1_50_spp50.csv`.
-- v3_asv6: same communities as v3, but only running 1:11. `uptake = 0.01`. Noticed mistake in adaptive sampling function that detectability is set to 0.2. This will effect results relative to 'none' method. Started AS on 9/2/22
+- v3_asv6: same communities as v3, but only running models on communities 1:11. `uptake = 0.01`. Noticed mistake in adaptive sampling function that detectability is set to 0.2. This will effect results relative to 'none' method. Started AS (for all 50 communities) on 9/2/22
 
 *To be continued...*
