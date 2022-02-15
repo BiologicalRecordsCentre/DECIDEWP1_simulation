@@ -20,6 +20,9 @@ write = FALSE
 cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>%
   mutate(uptake = 'NULL')
 
+cdf_very_low_uptake_detect <- read.csv('../outputs/asv6_v3combined_outputs_comm1_11_spp50.csv', stringsAsFactors = FALSE) %>% 
+  mutate(uptake = '0.01_0.2')
+
 cdf_very_low_uptake <- read.csv('../outputs/asv5_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
   mutate(uptake = 0.01)
 
@@ -33,6 +36,7 @@ cdf_full_uptake <- read.csv('../outputs/asv3_v3combined_outputs_comm1_50_spp50.c
   mutate(uptake = 1) 
 
 cdf <- rbind(#cdf_NULL_uptake, 
+  cdf_very_low_uptake_detect,
   cdf_very_low_uptake, cdf_low_uptake,
   cdf_half_uptake, cdf_full_uptake)
 

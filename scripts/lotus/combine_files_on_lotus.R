@@ -5,7 +5,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-for(v in 2:5){
+for(v in 6){
   
   # the name of the simulation run - same as slurm_simulate species
   simulation_run_name = 'communities_1km'
@@ -16,7 +16,7 @@ for(v in 2:5){
   # name of the adaptive sampling version we are looking to evaluate
   AS_version = paste0('asv',v)
   
-  n_communities = 1:50
+  n_communities = 1:11
   
   n_species = 1:50
   
