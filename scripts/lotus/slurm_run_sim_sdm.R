@@ -197,7 +197,7 @@ community_version = 'v3'
 
 # One name for the adaptive sampling round to allow us to create different sampling methods of the same initial community
 # This doesn't get used if running only the initial model, but does get used when running the adaptive sampling methods.
-AS_version = 'asv6'
+AS_version = 'asv7'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'

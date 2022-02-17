@@ -16,7 +16,7 @@ for(v in 6){
   # name of the adaptive sampling version we are looking to evaluate
   AS_version = paste0('asv',v)
   
-  n_communities = 1:11
+  n_communities = 1:50
   
   n_species = 1:50
   
