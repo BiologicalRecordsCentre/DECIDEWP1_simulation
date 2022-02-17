@@ -108,7 +108,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     #assign NA values the average weight
     cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
     #sample new locations according to cell weights
-    new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+    new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights)
     new_coords <- community_scores[new_locs, 1:2]
   }
   
@@ -131,7 +131,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       #assign NA values the average weight
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
-      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
       new_coords <- community_scores[new_locs, 1:2]
     }}
   
@@ -155,7 +155,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       #assign NA values the average weight
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
-      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
       new_coords <- community_scores[new_locs, 1:2]
     }
   }
@@ -180,7 +180,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       #assign NA values the average weight
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
-      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
       new_coords <- community_scores[new_locs, 1:2]
     }
   }
@@ -232,7 +232,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       #assign NA values the average weight
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
-      new_locs <- sample(1:nrow(comb_df_eff), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_locs <- sample(1:nrow(comb_df_eff), size = n, replace = FALSE, prob = cell_weights)
       new_coords <- community_scores[new_locs, 1:2]
     }
     
