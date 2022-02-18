@@ -14,7 +14,7 @@ community_version = 'v3'
 # and an adaptive sampling version, which is if we want to run the adaptive sampling 
 # process more than once - these outputs are stored in the same place as the old outputs
 # must always be prefixed by asv
-AS_version = 'asv7'
+AS_version = 'asv8'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
