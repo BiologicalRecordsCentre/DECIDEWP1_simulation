@@ -21,7 +21,7 @@ cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.c
   mutate(uptake = 'NULL')
 
 cdf_very_low_uptake_detect <- read.csv('../outputs/asv6_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = '0.01_0.2')
+  mutate(uptake = '0.01_0.2_prob_wght_adj_included')
 
 
 cdf_very_low_uptake_detect2 <- read.csv('../outputs/asv8_v3combined_outputs_comm1_11_spp50.csv', stringsAsFactors = FALSE) %>% 
@@ -125,7 +125,7 @@ Figures of the difference in MSE, AUC and Correlation between adaptively sampled
 
 ```{r comm_plots_mse_auc_corr, echo = FALSE}
 
-c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2' | comm_df$uptake == '0.1_0.2'),], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2_prob_wght_adj_included' | comm_df$uptake == '0.1_0.2'),], aes(x=method, y = delta_mse, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
   # geom_hline(yintercept = 0, linetype = 'dashed') +
