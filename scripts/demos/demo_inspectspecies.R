@@ -4,25 +4,27 @@
 
 # select community/sp of interest
 
-comm <- "9"
+comm <- "11"
 
-spp <- "11"
+spp <- "24"
+
+#set up to compare two different AS methods side by side
 
 method1 <- "none"
 
-method2 <- "coverage"
+method2 <- "unc_plus_recs"
 
 # true distrbutions
 
 community <- readRDS(paste0(dir_sp, "Comm",comm, "_Sp",spp, "/v3community_",comm,"_50_sim_initial.rds"))
 
-true_dist <- community[[11]]$true_prob_occ
+true_dist <- community[[as.numeric(spp)]]$true_prob_occ
 
 plot(true_dist)
 
 # initial locations
 
-initial_locs <- community[[11]]$observations
+initial_locs <- community[[as.numeric(spp)]]$observations
 
 points(initial_locs$lat[!is.na(initial_locs$Observed)] ~ initial_locs$lon[!is.na(initial_locs$Observed)])
 
@@ -31,6 +33,8 @@ points(initial_locs$lat[!is.na(initial_locs$Observed)] ~ initial_locs$lon[!is.na
 
 models <- list.files(path = paste0(dir_sp,"Comm",comm, "_Sp",spp,"/"), pattern = paste0("(",paste( c("rf", "gam", "lr"), sep = "", collapse = "|"),")*initial.rdata"))
 
+pred_func <- function(models){
+  
 models_to_read <- models
 
 #load outputs into list and extract prediction table
@@ -59,6 +63,12 @@ names(mod_average)[3] <- "z"
 
 pred1 <- rasterFromXYZ(mod_average)
 
+return(pred1)
+
+}
+
+pred1 <- pred_func(models)
+
 par(mfrow=c(1,2))
 plot(pred1$z)#initial predictions
 plot(pred1$sd)#initial uncertainty
@@ -85,4 +95,30 @@ points(AS_locs2$lat[!is.na(AS_locs2$Observed)] ~ AS_locs2$lon[!is.na(AS_locs2$Ob
 
 #coverage has no new locations sampled...data going into models is the same, eval differences just a result of stochasiticity in cross validation
 
+#predictions
 
+#method 1
+modelsAS1 <- list.files(path = paste0(dir_sp,"Comm",comm, "_Sp",spp,"/"), pattern = paste0("(",paste( c("rf", "gam", "lr"), sep = "", collapse = "|"),")*initial_AS_",method1,".rdata"))
+
+predAS1 <- pred_func(modelsAS1)
+
+par(mfrow=c(1,2))
+plot(predAS1$z)#initial predictions
+plot(predAS1$sd)#initial uncertainty
+
+#method 2
+modelsAS2 <- list.files(path = paste0(dir_sp,"Comm",comm, "_Sp",spp,"/"), pattern = paste0("(",paste( c("rf", "gam", "lr"), sep = "", collapse = "|"),")*initial_AS_",method2,".rdata"))
+
+predAS2 <- pred_func(modelsAS2)
+
+par(mfrow=c(1,2))
+plot(predAS2$z)#initial predictions
+plot(predAS2$sd)#initial uncertainty
+
+#compare predicted maps side by side
+
+par(mfrow=c(2,2))
+plot(true_dist, main = "true distribution")
+plot(pred1$z, main = "initial")
+plot(predAS1$z, main = method1)
+plot(predAS2$z, main = method2)
