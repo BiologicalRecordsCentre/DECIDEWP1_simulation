@@ -4,11 +4,17 @@
 
 # select community/sp of interest
 
-spp <- "Comm9_Sp11"
+comm <- "9"
+
+spp <- "11"
+
+method1 <- "none"
+
+method2 <- "coverage"
 
 # true distrbutions
 
-community <- readRDS(paste0(dir_sp, spp, "/v3community_9_50_sim_initial.rds"))
+community <- readRDS(paste0(dir_sp, "Comm",comm, "_Sp",spp, "/v3community_",comm,"_50_sim_initial.rds"))
 
 true_dist <- community[[11]]$true_prob_occ
 
@@ -23,7 +29,7 @@ points(initial_locs$lat[!is.na(initial_locs$Observed)] ~ initial_locs$lon[!is.na
 #initial model predictions
 
 
-models <- list.files(path = paste0(dir_sp,spp,sep = "/"), pattern = paste0("(",paste( c("rf", "gam", "lr"), sep = "", collapse = "|"),")*initial.rdata"))
+models <- list.files(path = paste0(dir_sp,"Comm",comm, "_Sp",spp,"/"), pattern = paste0("(",paste( c("rf", "gam", "lr"), sep = "", collapse = "|"),")*initial.rdata"))
 
 models_to_read <- models
 
@@ -31,7 +37,7 @@ models_to_read <- models
 model_outputs <- list()
 idx <- 1
 for (k in models_to_read){
-  try(load(paste0(paste0(dir_sp,spp,sep = "/"),k )))
+  try(load(paste0(paste0(dir_sp,"Comm",comm, "_Sp",spp,"/"),k )))
   model_type <- model_output$model
   if (model_type != "rf"){
     model_preds <- model_output$predictions}
@@ -53,4 +59,30 @@ names(mod_average)[3] <- "z"
 
 pred1 <- rasterFromXYZ(mod_average)
 
-plot(pred1)$z
+par(mfrow=c(1,2))
+plot(pred1$z)#initial predictions
+plot(pred1$sd)#initial uncertainty
+
+#method 1
+
+AS1 <- readRDS(paste0(dir_sp, "Comm",comm, "_Sp",spp, "/asv8_v3community_",comm,"_50_sim_initial_AS_",method1,".rds"))
+
+AS_locs1 <- AS1[[as.numeric(spp)]]$observations
+
+plot(true_dist, main = method1)
+points(initial_locs$lat[!is.na(initial_locs$Observed)] ~ initial_locs$lon[!is.na(initial_locs$Observed)], pch = 20)
+points(AS_locs1$lat[!is.na(AS_locs1$Observed)] ~ AS_locs1$lon[!is.na(AS_locs1$Observed)], col = "red")
+
+#method 2
+
+AS2 <- readRDS(paste0(dir_sp, "Comm",comm, "_Sp",spp, "/asv8_v3community_",comm,"_50_sim_initial_AS_",method2,".rds"))
+
+AS_locs2 <- AS2[[as.numeric(spp)]]$observations
+
+plot(true_dist, main = method2)
+points(initial_locs$lat[!is.na(initial_locs$Observed)] ~ initial_locs$lon[!is.na(initial_locs$Observed)], pch = 20)
+points(AS_locs2$lat[!is.na(AS_locs2$Observed)] ~ AS_locs2$lon[!is.na(AS_locs2$Observed)], col = "red")
+
+#coverage has no new locations sampled...data going into models is the same, eval differences just a result of stochasiticity in cross validation
+
+
