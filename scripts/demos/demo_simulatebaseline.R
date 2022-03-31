@@ -44,6 +44,10 @@ hbv_y <- env_data
 par(mfrow=c(1,1))
 plot(hbv_y[[1]], main = names(hbv_y[[1]]))
 
+effort = raster("butterfly_1km_effort_layer.grd")
+
+corLocal(raster::crop(hbv_y[[1]], effort),effort)
+
 #writeRaster(hbv_y, "hbv_y.grd")
 
 #' ## 2. Subset environmental layers

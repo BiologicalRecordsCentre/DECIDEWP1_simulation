@@ -73,13 +73,13 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, com
   species <- sp_list[index]
   
   #subset envdata for species of interest  
-  env_data_full <- subset(hbv_y, subset = community[[index]]$variables)
+  env_data_full <- subset(hbv_y, subset = community[[index]]$model_variables)
   
   #use only a 2/3 proportion of the environmental data to run the models to reduce model fit
-  env_index <- sample(1:dim(env_data_full)[3], size = round(dim(env_data_full)[3]*(2/3)), replace = FALSE)
+  #env_index <- sample(1:dim(env_data_full)[3], size = round(dim(env_data_full)[3]*(2/3)), replace = FALSE)
   
   #subset environmental data for the model run
-  env_data <- env_data_full[[env_index]]
+  #env_data <- env_data_full[[env_index]]
   
   #set parameters
   model <- model

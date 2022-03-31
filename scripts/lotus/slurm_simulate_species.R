@@ -60,8 +60,10 @@ simulate_species <- function(env_data, sample_across_species, extent = NULL, n =
     #subset to PO data
     occs$sample.points <- occs$sample.points[occs$sample.points$Real == 1,]
     occs$sample.points$Observed[occs$sample.points$Observed == 0] <- NA
+    #subset environmental variables for modelling
+    model_variables <- sample(variables, size = round(length(variables)*(2/3)), replace = FALSE)
     #store required outputs to list
-    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables, prevalence = prevalence)
+    community[[i]] <- list(true_prob_occ = pa$probability.of.occurrence, pres_abs = pa$pa.raster, observations = occs$sample.points, variables = pa$details$variables, model_variables = model_variables, prevalence = prevalence)
   }
   
   #return(community)
@@ -120,7 +122,8 @@ simulate_species <- function(env_data, sample_across_species, extent = NULL, n =
       community2[[c]] <- list(true_prob_occ = comm_each_spp$true_prob_occ, 
                               pres_abs = comm_each_spp$pres_abs, 
                               observations = comm_cross_spp[comm_cross_spp$Real == 1,], 
-                              variables = comm_each_spp$variables, 
+                              variables = comm_each_spp$variables,
+                              model_variables = comm_each_spp$model_variables,
                               prevalence = comm_each_spp$prevalence)
       
       
