@@ -32,7 +32,7 @@ simulate_species <- function(env_data, sample_across_species, extent = NULL, n =
   } else if ((is.character(background)|is.factor(background)) & !grepl("\\.", background)) {bg_layer <- raster::subset(env_extent, as.character(background))} else if ((is.character(background)|is.factor(background)) & grepl("\\.", background)) {bg_layer <- raster::raster(as.character(background))} else {bg_layer <- NULL}
   
   #extract effort layer from raster if provided (note currently uses layers in existing raster stack, could read in other layers)
-  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(background)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,as.character(effort))} else if ((is.character(effort)|is.factor(background)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
+  if(is.numeric(effort)){eff_layer <- env_extent[[effort]]} else if((is.character(effort)|is.factor(effort)) & !grepl("\\.", effort)) {eff_layer <- raster::subset(env_extent,as.character(effort))} else if ((is.character(effort)|is.factor(effort)) & grepl("\\.", effort)) {eff_layer <- raster::raster(as.character(effort))} else  {eff_layer <- NULL}
   
   if(is.null(eff_layer)){eff_weights <- (env_extent[[1]]*0)+1} else if (is.null(bg_layer)){
     eff_weights <- eff_layer/weight_adj} else {eff_weights <- (bg_layer/bg_layer) + (eff_layer/weight_adj)}
