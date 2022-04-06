@@ -148,12 +148,14 @@ simulate_species <- function(env_data, sample_across_species, extent = NULL, n =
 
 library(rslurm)
 
+source('scripts/slurm_simulate_species_function.R')
+
 dirs <- config::get("LOTUSpaths_sim")
 
 # a version name that follows all the way through the community
-community_version_name = 'v3'
+community_version_name = 'v4'
 
-n_communities = 21:50
+n_communities = 1
 
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 

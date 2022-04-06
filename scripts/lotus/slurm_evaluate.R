@@ -139,15 +139,15 @@ source("scripts/slurm_evaluate_function.R")
 dirs <- config::get("LOTUSpaths")
 
 # name of the community version we are running - so we're not overwriting things, keep same as for slurm_run_sim_sdm
-community_version = 'v3'
+community_version = 'v4'
 
 # name of the adaptive sampling version we are looking to evaluate
-AS_version = 'asv8'
+AS_version = 'asv1'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
 
-n_communities = 1:11
+n_communities = 1
 
 n_species = 1:50
 

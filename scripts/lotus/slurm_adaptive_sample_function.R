@@ -257,7 +257,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     new.obs[[i]]$observations <- observations
   }
   
-  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables, AS_method = method))
+  community_AS <- lapply(seq_along(community), function(x) list(observations = rbind(community[[x]]$observations, new.obs[[x]]$observations), variables = community[[x]]$variables, model_variables = community[[x]]$model_variables, AS_method = method))
   
   community_name <- strsplit(basename(as.character(community_file)),"\\.")[[1]][1]
   

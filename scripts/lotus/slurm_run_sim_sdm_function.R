@@ -73,7 +73,7 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, com
   species <- sp_list[index]
   
   #subset envdata for species of interest  
-  env_data_full <- subset(hbv_y, subset = community[[index]]$model_variables)
+  env_data <- subset(hbv_y, subset = community[[index]]$model_variables)
   
   #use only a 2/3 proportion of the environmental data to run the models to reduce model fit
   #env_index <- sample(1:dim(env_data_full)[3], size = round(dim(env_data_full)[3]*(2/3)), replace = FALSE)
@@ -122,21 +122,21 @@ slurm_run_sim_sdm <- function(index, spdata, model, data_type, writeRas, GB, com
                 format = 'raster', overwrite = T)
     
     
-    #' Plot maps
+    #' #' Plot maps
+    #' #' 
+    #' #' 
+    #' png(paste0(outPath,  community_version, 'sdm_plots/', species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
     #' 
+    #' par(mfrow=c(3,2))
+    #' par(mar = c(2,2,2,2))
+    #' plot(community[[index]]$true_prob_occ, main = "Probability of occurrence")
+    #' plot(community[[index]]$pres_abs, main = "Presence absence")
+    #' points(community[[index]]$observations[!is.na(community[[index]]$observations$Observed),1:2], pch = 20)
+    #' plot(rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), main = "Predicted prob. occ")
+    #' plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), main = "Standard deviation of predictions")
+    #' plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, DECIDE_score)), main = "DECIDE score")
     #' 
-    png(paste0(outPath,  community_version, 'sdm_plots/', species_name,".png"), height = 200, width = 200, res = 300, units = "mm", pointsize = 14)
-    
-    par(mfrow=c(3,2))
-    par(mar = c(2,2,2,2))
-    plot(community[[index]]$true_prob_occ, main = "Probability of occurrence")
-    plot(community[[index]]$pres_abs, main = "Presence absence")
-    points(community[[index]]$observations[!is.na(community[[index]]$observations$Observed),1:2], pch = 20)
-    plot(rasterFromXYZ(cbind(hbv_df$x,hbv_df$y,preds1$mean_predictions)), main = "Predicted prob. occ")
-    plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, preds1$sd_predictions)), main = "Standard deviation of predictions")
-    plot(rasterFromXYZ(cbind(hbv_df$x, hbv_df$y, DECIDE_score)), main = "DECIDE score")
-    
-    dev.off()
+    #' dev.off()
     
     
   }
