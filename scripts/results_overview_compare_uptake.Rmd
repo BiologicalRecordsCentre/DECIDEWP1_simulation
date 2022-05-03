@@ -17,34 +17,13 @@ write = FALSE
 
 ```{r data, echo = FALSE}
 
-cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>%
-  mutate(uptake = 'NULL')
+# load each of the evaluation files 
+cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.1')
 
-cdf_very_low_uptake_detect <- read.csv('../outputs/asv6_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = '0.01_0.2_prob_wght_adj_included')
-
-
-cdf_very_low_uptake_detect2 <- read.csv('../outputs/asv8_v3combined_outputs_comm1_11_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = '0.1_0.2')
-
-
-cdf_very_low_uptake <- read.csv('../outputs/asv5_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.01)
-
-cdf_low_uptake <- read.csv('../outputs/asv4_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.1)
-
-cdf_half_uptake <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.5)
-
-cdf_full_uptake <- read.csv('../outputs/asv3_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 1) 
-
-cdf <- rbind(#cdf_NULL_uptake, 
-  cdf_very_low_uptake_detect,
-  cdf_very_low_uptake_detect2,
-  cdf_very_low_uptake, cdf_low_uptake,
-  cdf_half_uptake, cdf_full_uptake)
+# combine all the files
+cdf <- rbind(cdf_0.1_uptake)
 
 ```
 
@@ -108,7 +87,8 @@ comm_df <- et %>%
             init_corr = mean(init_corr, na.rm = T),
             init_auc = mean(init_auc, na.rm = T),
             init_mean_sd = mean(init_mean_sd, na.rm = T),
-            init_max_sd = max(init_max_sd, na.rm = T)) %>%
+            init_max_sd = max(init_max_sd, na.rm = T),
+            prev = median(prev)) %>%
   ungroup() %>% 
   mutate(delta_mse = mse - init_mse,
          delta_corr = corr - init_corr,
@@ -125,10 +105,10 @@ Figures of the difference in MSE, AUC and Correlation between adaptively sampled
 
 ```{r comm_plots_mse_auc_corr, echo = FALSE}
 
-c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2_prob_wght_adj_included' | comm_df$uptake == '0.1_0.2'),], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+c1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta mse (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -137,7 +117,7 @@ c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2_pr
 c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta auc (higher = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -146,7 +126,7 @@ c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, f
 c3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta corr (higher = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -173,7 +153,7 @@ Figures of the difference in mean and maximum predictive variance between adapti
 c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_sd, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta mean predictive\nvariance (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -181,12 +161,20 @@ c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_s
 c5 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_max_sd, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta max predictive\nvariance (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
 
-c4|c5
+comb_plot_comm_mn_max <- c4|c5 + plot_layout(guides = 'collect')
+comb_plot_comm_mn_max
+
+if(write) {
+  
+  ggsave(comb_plot_comm_mn_max, filename = '../outputs/plots/combined_delta_plot_uptake_mn_mx_predvar_0.1_comm1_11.tiff', 
+         width = 12, height = 5)
+  
+}
 
 
 ```
