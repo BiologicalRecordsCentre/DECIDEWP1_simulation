@@ -109,7 +109,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
     #sample new locations according to cell weights
     new_locs <- sample(1:nrow(eff_df), size = n, replace = FALSE, prob = cell_weights)
-    new_coords <- community_scores[new_locs, 1:2]
+    new_coords <- eff_df[new_locs, 1:2]
   }
   
   if (method == "uncertainty"){    #merge with existing sampling bias if uptake isn't NULL
@@ -132,8 +132,9 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
       new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
-      new_coords <- community_scores[new_locs, 1:2]
-    }}
+      new_coords <- comb_df[new_locs, 1:2]
+    }
+  }
   
   if (method == "prevalence"){
     #merge with existing sampling bias if uptake isn't NULL
@@ -156,7 +157,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
       new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
-      new_coords <- community_scores[new_locs, 1:2]
+      new_coords <- comb_df[new_locs, 1:2]
     }
   }
   
@@ -181,16 +182,37 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
       new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights)
-      new_coords <- community_scores[new_locs, 1:2]
+      new_coords <- comb_df[new_locs, 1:2]
     }
   }
   
   if (method == "coverage"){
     if(is.null(eff_layer)) stop("Cannot adaptively sample using method 'coverage' without specifying an existing sampling raster (i.e. currently eff_layer = NULL)")
+    
     eff_zero <- raster::as.data.frame(eff_layer, xy=TRUE)
     empty_cells <- eff_zero[eff_zero$butterfly_1km_effort == 0 & !is.na(eff_zero$butterfly_1km_effort),]#1 because we added 1 to the eff_layer to allow sampling in previously unvisited squares
-    new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
-    new_coords <- empty_cells[new_locs,1:2]
+    
+    if(is.null(uptake)){
+      new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
+      new_coords <- empty_cells[new_locs,1:2]
+    }
+    if(!is.null(uptake)){
+      new_locs_empty <- sample(1:nrow(empty_cells), size = n*uptake, replace = FALSE)#sample from empty cells with equal prob
+      new_coords_empty <- empty_cells[new_locs_empty,1:2]
+      
+      ## sample from background effort - in pattern dictated by underlying sampling
+      
+      # calculate background sampling probability - copied from 'none'
+      cell_weights <- eff_df$layer/sum(eff_df$layer, na.rm=TRUE)
+      #assign NA values the average weight
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm=TRUE)
+      
+      # sample n*(1-uptake) new locations according to current sampling distribution
+      new_locs_effort <- sample(1:nrow(eff_df), size = n*(1-uptake), prob = cell_weights)
+      new_coords_effort <- eff_df[new_locs_effort,1:2]
+      
+      new_coords <- rbind(new_coords_empty, new_coords_effort)
+    }
   }
   
   if (method == "unc_plus_recs"){
@@ -206,7 +228,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       group_by(x, y) %>% tally 
     
     #combine effort and score dataframes
-    comb_df <- merge(community_scores, num_recs, by = c("x", "y"), all.x = TRUE)
+    comb_df <- merge(community_scores, num_recs, by = c("x", "y"), all.x = TRUE, sort = FALSE)
     comb_df$n[is.na(comb_df$n)] <- 0 # define NAs as 0; NAs are where there are no records
     comb_df$n <- comb_df$n+1 # +1 to all so that when dividing by areas with no records, just get the unaltered uncertainty score
     
@@ -220,8 +242,8 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       #assign NA values the average weight
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
-      new_locs <- sample(1:nrow(community_scores), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
-      new_coords <- community_scores[new_locs, 1:2]
+      new_locs <- sample(1:nrow(comb_df), size = n, replace = FALSE, prob = cell_weights^probability_weight_adj)
+      new_coords <- comb_df[new_locs, 1:2]
     } else if(!is.null(uptake)) {
       # combine with the specified effort layer dataset above so can see what happens
       # if people carry on with business as usual instead of doing the sampling
@@ -233,7 +255,7 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
       cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
       #sample new locations according to cell weights
       new_locs <- sample(1:nrow(comb_df_eff), size = n, replace = FALSE, prob = cell_weights)
-      new_coords <- community_scores[new_locs, 1:2]
+      new_coords <- comb_df_eff[new_locs, 1:2]
     }
     
   }
