@@ -26,6 +26,8 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 - v3_asv8: v3 communities, models on communities 1:50. `uptake = 0.1`. Detectability is set to 0.2. Removed `probability_weight_adj` parameter from the adaptive sampling methods with uptake as it was likely reinforcing biases.
 - v4_asv1: v4 communities, models on communities 1:50 with fixed bugs to do with environmental variables being different between models. Detectability set to 0.2. Uptake set to `0.1`. 
 - v4_asv2: uptake set to `0.01`
+- v4_asv3: uptake set to `0`
+- v4_asv4: uptake set to `0.5`
 
 
 
