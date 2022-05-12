@@ -27,7 +27,7 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 - v4_asv1: v4 communities, models on communities 1:50 with fixed bugs to do with environmental variables being different between models. Detectability set to 0.2. Uptake set to `0.1`. Finished 12.5.22
 - v4_asv2: uptake set to `0.01`. Started 12.5.22.
 - v4_asv3: uptake set to `0`
-- v4_asv4: uptake set to `0.5`
+- v4_asv4: uptake set to `0.5`. Started 12.5.22.
 
 
 
