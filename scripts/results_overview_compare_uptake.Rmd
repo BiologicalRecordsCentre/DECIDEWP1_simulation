@@ -18,7 +18,7 @@ write = FALSE
 ```{r data, echo = FALSE}
 
 # load each of the evaluation files 
-cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_11_spp50.csv', 
+cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.1')
 
