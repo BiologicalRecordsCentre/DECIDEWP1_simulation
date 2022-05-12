@@ -199,19 +199,15 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
     if(!is.null(uptake)){
       new_locs_empty <- sample(1:nrow(empty_cells), size = n*uptake, replace = FALSE)#sample from empty cells with equal prob
       new_coords_empty <- empty_cells[new_locs_empty,1:2]
-      
       ## sample from background effort - in pattern dictated by underlying sampling
-      
       # calculate background sampling probability - copied from 'none'
       cell_weights <- eff_df$layer/sum(eff_df$layer, na.rm=TRUE)
       #assign NA values the average weight
-      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm=TRUE)
-      
-      # sample n*(1-uptake) new locations according to current sampling distribution
-      new_locs_effort <- sample(1:nrow(eff_df), size = n*(1-uptake), prob = cell_weights)
-      new_coords_effort <- eff_df[new_locs_effort,1:2]
-      
-      new_coords <- rbind(new_coords_empty, new_coords_effort)
+      cell_weights[is.na(cell_weights)] <- mean(cell_weights, na.rm= TRUE)
+      #sample new locations according to cell weights
+      new_locs_effort <- sample(1:nrow(eff_df), size = n*(1-uptake), replace = FALSE, prob = cell_weights)
+      new_coords_effort <- eff_df[new_locs_effort, 1:2]
+      new_coords <- rbind(new_coords_empty, new_coords_effort) # bind the new coords together
     }
   }
   

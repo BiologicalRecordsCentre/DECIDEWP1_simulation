@@ -187,7 +187,7 @@ source('scripts/slurm_run_sim_sdm_function.R')
 
 ## new parameters code to try and automate the parameter generation file a little more
 n_species = 1:50 # vector of number of species in each community
-n_communities = 1:11 # number of communities to go through # can submit 11 at a time ## running 1-11, done 12-22, done 23-33, running 34-44, running 44-50
+n_communities = 12:22 # number of communities to go through # can submit 11 at a time ## done 1-11, running 12-22, done 23-33, done 34-44, done 44-50 of ASV1
 models = c('lr', 'gam', 'rf')
 data_type = c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
 

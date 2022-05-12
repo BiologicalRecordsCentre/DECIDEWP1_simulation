@@ -18,7 +18,7 @@ write = FALSE
 ```{r data, echo = FALSE}
 
 # load each of the evaluation files 
-cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_11_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.1')
 
@@ -90,7 +90,7 @@ comm_df <- et %>%
             init_max_sd = max(init_max_sd, na.rm = T),
             prev = median(prev)) %>%
   ungroup() %>% 
-  mutate(delta_mse = mse - init_mse,
+  mutate(delta_mse = sqrt(mse) - sqrt(init_mse),
          delta_corr = corr - init_corr,
          delta_auc = auc - init_auc,
          delta_mean_sd = mean_sd - init_mean_sd,
@@ -167,7 +167,7 @@ c5 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_max_sd
   scale_fill_discrete(name = 'Uptake')
 
 comb_plot_comm_mn_max <- c4|c5 + plot_layout(guides = 'collect')
-comb_plot_comm_mn_max
+comb_plot_comm/comb_plot_comm_mn_max 
 
 if(write) {
   
