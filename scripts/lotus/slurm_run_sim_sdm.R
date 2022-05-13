@@ -252,7 +252,7 @@ for(s in job_seqs) {
   #### slurm apply call
   sdm_slurm <- slurm_apply(slurm_run_sim_sdm,
                            params = pars,
-                           jobname = paste0(community_version, '_sdm_simulated_species_', AS_version, '_', max(n_communities)),
+                           jobname = paste0(community_version, '_', AS_version, '_sdm_simulated_species_', max(n_communities)),
                            nodes = length(pars$index),
                            cpus_per_node = 1,
                            slurm_options = list(partition = 'short-serial',#-4hr',
@@ -265,6 +265,6 @@ for(s in job_seqs) {
                            submit = T)
   pars$BatchID <- sdm_slurm$jobid
   pars$JobID <- 0:(nrow(pars)-1)#slurm job ID
-  write.csv(pars, paste0('_rslurm_', community_version, '_sdm_simulated_species_', AS_version, '_', max(n_communities),'/pars.csv'))#to match to error files
+  write.csv(pars, paste0('_rslurm_', community_version, '_', AS_version, '_sdm_simulated_species_', max(n_communities),'/pars.csv'))#to match to error files
   
 }

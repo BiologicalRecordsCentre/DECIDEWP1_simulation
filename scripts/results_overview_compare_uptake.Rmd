@@ -21,9 +21,12 @@ write = FALSE
 cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.1')
+cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.01')
 
 # combine all the files
-cdf <- rbind(cdf_0.1_uptake)
+cdf <- rbind(cdf_0.1_uptake,cdf_0.01_uptake)
 
 ```
 
