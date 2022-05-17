@@ -22,7 +22,7 @@ cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.1')
 cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
-                           stringsAsFactors = FALSE) %>%
+                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.01')
 
 # combine all the files
@@ -111,6 +111,7 @@ Figures of the difference in MSE, AUC and Correlation between adaptively sampled
 c1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
+  # ylim(-0.01, 0.01) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta mse (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
@@ -259,7 +260,7 @@ No...
 ```{r good_vs_bad}
 
 ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = factor(uptake))) +
-  # geom_point() +
+  geom_point() +
   geom_smooth() +
   facet_wrap(~method) +
   theme_bw() +
@@ -271,22 +272,56 @@ ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = f
 
 ```
 
-```{r}
+### Investigate outlying communities
 
-# View(et)
+```{r comm_plot}
 
-library(ggridges)
+# weird distributions - very narrow
+et %>% 
+  filter(uptake == 0.1) %>% 
+  pivot_longer(cols = grep('delta_', colnames(et), value = T)) %>% 
+  ggplot(aes(x = value)) +
+  geom_histogram() +
+  facet_wrap(~name, scales = 'free')
 
-ggplot(et, aes(x = community, y = delta_mse)) +
-  geom_boxplot()
-
-ggplot(data = et[et$method!='initial',], aes(x =  delta_mse, y = factor(uptake), fill = factor(uptake)))+
-  geom_density_ridges(alpha = 0.5) +
-  geom_vline(xintercept = 0, linetype = 'dashed') +
+# look at each metric across communities 
+et %>% 
+  filter(uptake == 0.1) %>% 
+  pivot_longer(cols = grep('delta_', colnames(et), value = T)) %>%
+  mutate(community = gsub("v4community_", '', community)) %>% 
+  ggplot(aes(y = value, x = community)) +
+  geom_boxplot() +
+  facet_wrap(~name, scales = 'free') +
   theme_bw() +
-  facet_wrap(~method, scales = 'free')
+  theme(axis.text.x = element_text(angle = 90))
+
+# look at each community - mse
+ggplot(et, aes(x = community, y = delta_mse)) +
+  geom_boxplot() +
+  # ylim(-.001, .001) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
 
 ```
+
+```{r}
+
+p1 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = mse, fill = community)) +
+  geom_boxplot()
+p2 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = init_mse, fill = community)) +
+  geom_boxplot()
+
+
+p3 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = auc, fill = community)) +
+  geom_boxplot()
+p4 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = init_auc, fill = community)) +
+  geom_boxplot()
+
+
+p1/p2/p3/p4 + plot_layout(guides = 'collect')
+
+```
+
 
 ### problem with community 22?
 

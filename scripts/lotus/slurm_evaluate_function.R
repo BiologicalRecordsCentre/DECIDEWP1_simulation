@@ -92,7 +92,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
         mean_sd <- mean(mod_average$sd, na.rm = TRUE)
         max_sd <- max(mod_average$sd, na.rm = TRUE)
         
-        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species))
+        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species, mabse = mabse, sdabse = sdabse, occprobe = occprobe))
         
       }
     }#method loop
