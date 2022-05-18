@@ -17,6 +17,9 @@ write = FALSE
 
 ```{r data, echo = FALSE}
 
+obvs_df <- read.csv('../outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
+                    stringsAsFactors = FALSE)
+
 # load each of the evaluation files 
 cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
@@ -264,6 +267,16 @@ ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = f
   geom_smooth() +
   facet_wrap(~method) +
   theme_bw() +
+  xlab('AUC initial model') + 
+  ylab('AUC final model') +
+  scale_color_discrete(name = 'Uptake')
+
+
+ggplot(data = et[et$method != 'initial',], aes(x = init_mse, y = mse, colour = factor(uptake))) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~method) +
+  theme_bw() +
   xlab('MSE initial model') + 
   ylab('MSE final model') +
   scale_color_discrete(name = 'Uptake')
@@ -319,6 +332,37 @@ p4 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = init_auc, fill = commu
 
 
 p1/p2/p3/p4 + plot_layout(guides = 'collect')
+
+```
+
+
+### percent increase in observations
+
+```{r}
+
+head(obvs_df)
+
+odf <- obvs_df %>% 
+  dplyr::select(-X, -as_version) %>% 
+  distinct()
+
+head(odf)
+
+ggplot(odf, aes(x = meth, y = perc_increase)) +
+  geom_boxplot()
+
+ggplot(odf, aes(x= initial_obvs, y = new_observations, col = log(perc_increase))) +
+  geom_point() +
+  scale_colour_viridis()
+
+ggplot(odf, aes(x= initial_obvs, y = new_observations, col = meth)) +
+  geom_point() +
+  scale_colour_viridis_d()
+
+obvs_df %>% 
+  ggplot(aes(x = meth, y = perc_increase)) +
+  geom_boxplot() +
+  facet_wrap(~as_version)
 
 ```
 
