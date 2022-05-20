@@ -196,7 +196,7 @@ comb_plot_comm_no
 
 if(write) {
   
-  ggsave(comb_plot_comm, filename = '../outputs/plots/combined_delta_plot_uptake_no.tiff', 
+  ggsave(comb_plot_comm_no, filename = '../outputs/plots/combined_delta_plot_uptake_no_outliers.tiff', 
          width = 12, height = 5)
   
 }

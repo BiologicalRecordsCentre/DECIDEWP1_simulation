@@ -95,15 +95,16 @@ glimpse(no_spp)
 
 true_obvs <- data.frame()
 for(i in 1:length(obvsinit)) {
-  true_obvs <- rbind(true_obvs, cbind(obvsinit[[i]]$observations[,1:2], species = paste0('Sp',i))) 
+  true_obvs <- rbind(true_obvs, cbind(as.data.frame(obvsinit[[i]]$pres_abs, xy=T, na.rm=T)[,1:2], species = paste0('Sp',i))) 
 }
 
 true_obvs2 <- true_obvs  %>% 
-  dplyr::select(lon, lat) %>% 
+  dplyr::select(x, y) %>% 
   distinct() %>% 
   mutate(method = 'true',
          asv='true',
-         community = 1)
+         community = 1) %>% 
+  dplyr::rename(lon = x, lat = y)
 head(true_obvs2)
 
 no_spp <- rbind(no_spp, true_obvs2)
@@ -270,7 +271,7 @@ ggplot(elpdf[elpdf$method!='initial' & elpdf$method!='true',], aes(x,y,col = fac
   theme_bw()
 
 
-ggplot(elpdf[elpdf$method!='initial' & elpdf$asv!='init',], aes(x,y,col = method)) +
+ggplot(elpdf[elpdf$asv!='init' & elpdf$asv!= 'true',], aes(x,y,col = method)) +
   geom_path(size = 0.7) +
   xlab('PC1') + ylab('PC2') +
   facet_wrap(~factor(asv)) +
