@@ -32,8 +32,12 @@ cdf_0.5_uptake <- read.csv('../outputs/v4Community/asv4_v4combined_outputs_comm1
                             stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.5')
 
+cdf_0_uptake <- read.csv('../outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
+                            stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0')
+
 # combine all the files
-cdf <- rbind(cdf_0.1_uptake,cdf_0.01_uptake,cdf_0.5_uptake)
+cdf <- rbind(cdf_0_uptake, cdf_0.1_uptake,cdf_0.01_uptake,cdf_0.5_uptake)
 
 ```
 

@@ -64,7 +64,8 @@ obvsinit <- readRDS('../outputs/comm4_asv1_investigating/v4community_1_50_sim_in
 
 init_obvs <- data.frame()
 for(i in 1:length(obvsinit)) {
-  init_obvs <- rbind(init_obvs, cbind(obvsinit[[i]]$observations[,1:2], species = paste0('Sp',i))) 
+  os <- obvsinit[[i]]$observations[!is.na(obvsinit[[i]]$observations$Observed),]
+  init_obvs <- rbind(init_obvs, cbind(os[,1:2], species = paste0('Sp',i))) 
 }
 
 obvsinit2 <- init_obvs %>% 
@@ -89,6 +90,26 @@ no_spp <- rbind(no_spp, init_nspp)
 glimpse(no_spp)
 ```
 
+
+```{r true_distribution}
+
+true_obvs <- data.frame()
+for(i in 1:length(obvsinit)) {
+  true_obvs <- rbind(true_obvs, cbind(obvsinit[[i]]$observations[,1:2], species = paste0('Sp',i))) 
+}
+
+true_obvs2 <- true_obvs  %>% 
+  dplyr::select(lon, lat) %>% 
+  distinct() %>% 
+  mutate(method = 'true',
+         asv='true',
+         community = 1)
+head(true_obvs2)
+
+no_spp <- rbind(no_spp, true_obvs2)
+```
+
+
 ```{r extract_env}
 env_loc <- terra::extract(env, no_spp[,1:2])
 edat <- cbind(no_spp, env_loc)
@@ -102,9 +123,9 @@ pc <- prcomp(edat %>%
                dplyr::select(7:39),
              scale. = T,
              center = T)
-glimpse(pc)
-plot(pc)
-summary(pc)
+# glimpse(pc)
+# plot(pc)
+# summary(pc)
 
 ggplot(data.frame(pc$x), aes(PC1, PC2)) +
   geom_point() +
@@ -225,16 +246,24 @@ elp <- gdf$ellip_dat %>%
   separate(groups, into = c('method', 'asv'), sep = "\\.", extra = 'merge')
 head(elp)
 
-init <- data.frame(do.call(rbind, replicate(6, as.matrix(elp[elp$method=='initial',]), simplify=FALSE)))
+init <- data.frame(do.call(rbind, replicate(length(unique(elp$method[elp$method != 'initial'])),
+                                            as.matrix(elp[elp$method=='initial',]), simplify=FALSE)))
 
 init$method <- rep(unique(elp$method[elp$method!='initial']), 
                    each = nrow((elp[elp$method=='initial',])))
 
-elpdf <- rbind(elp, init) %>% 
+
+true <- data.frame(do.call(rbind, replicate(length(unique(elp$method[elp$method != 'true'])),
+                                            as.matrix(elp[elp$method=='true',]), simplify=FALSE)))
+
+true$method <- rep(unique(elp$method[elp$method!='true']), 
+                   each = nrow((elp[elp$method=='true',])))
+
+elpdf <- rbind(elp, init, true) %>% 
   mutate(x = as.numeric(xvar),
          y = as.numeric(yvar))
 
-ggplot(elpdf[elpdf$method!='initial',], aes(x,y,col = factor(asv))) +
+ggplot(elpdf[elpdf$method!='initial' & elpdf$method!='true',], aes(x,y,col = factor(asv))) +
   geom_path(size = 0.7) +
   xlab('PC1') + ylab('PC2') +
   facet_wrap(~method) +
