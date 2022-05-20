@@ -28,8 +28,12 @@ cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm
                             stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.01')
 
+cdf_0.5_uptake <- read.csv('../outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
+                            stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.5')
+
 # combine all the files
-cdf <- rbind(cdf_0.1_uptake,cdf_0.01_uptake)
+cdf <- rbind(cdf_0.1_uptake,cdf_0.01_uptake,cdf_0.5_uptake)
 
 ```
 
@@ -150,6 +154,50 @@ if(write) {
 
 ```
 
+## Same figures without outliers
+
+```{r comm_plots_mse_auc_corr, echo = FALSE}
+
+cno1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.0075, 0.005) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+cno2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.005, 0.009) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta auc (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+cno3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.01, 0.015) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta corr (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+comb_plot_comm_no <- cno1+cno2+cno3 + plot_layout(guides = 'collect')
+comb_plot_comm_no
+
+if(write) {
+  
+  ggsave(comb_plot_comm, filename = '../outputs/plots/combined_delta_plot_uptake_no.tiff', 
+         width = 12, height = 5)
+  
+}
+
+```
 
 Figures of the difference in mean and maximum predictive variance between adaptively sampled models and initial models.
 
@@ -193,9 +241,10 @@ if(write) {
 ```{r indiv_plots_mse_auc_corr_prev, warning = F, message = F, echo = FALSE, fig.width = 12}
 
 prc1 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.02, 0.015) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -208,9 +257,10 @@ prc1 <- ggplot(et[et$method!='initial',],
 
 
 prc2 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_auc, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_auc, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.01, 0.04) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -223,9 +273,10 @@ prc2 <- ggplot(et[et$method!='initial',],
 
 
 prc3 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_corr, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_corr, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.05, 0.075) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -243,9 +294,10 @@ prc1|prc2|prc3 + plot_layout(guides = 'collect')
 ggplot(et[et$method!='initial',], 
        aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
   # geom_point(alpha = 0.5) +
-  geom_smooth(se = T, alpha = 0.1) +
+  geom_density2d() +
+  # geom_smooth(se = T, alpha = 0.1) +
   theme_classic() + 
-  # ylim(-0.02, 0.015) +
+  # ylim(-0.0075, 0.0075) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('Prevalence') + ylab('delta mse (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +

@@ -5,7 +5,7 @@ library(rslurm)
 
 dirs <- config::get("LOTUSpaths")
 
-asv <- 2
+asv <- 4
 
 for(v in 1:asv){
   
