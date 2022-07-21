@@ -341,6 +341,33 @@ ggplot(data = et[et$method != 'initial',], aes(x = init_mse, y = mse, colour = f
 
 ```
 
+
+###Are the same species improving in each method?
+
+No
+
+```{r}
+
+et[et$method != 'initial',] %>% 
+  group_by(method, uptake) %>% 
+  arrange(delta_auc)
+
+subset(et, method == 'coverage' & uptake == 0.01 & community == 'v4community_1_50_sim') %>% 
+  ggplot(aes(x=reorder(species, delta_auc), y = delta_auc, col = prevalence)) +
+  geom_point() +
+  ggtitle('coverage') +
+  theme(axis.text.x = element_text(angle = 50))
+
+subset(et, method == 'uncertainty' & uptake == 0.01 & community == 'v4community_1_50_sim') %>% 
+  ggplot(aes(x=reorder(species, delta_auc), y = delta_auc, col = prevalence)) +
+  geom_point() +
+  ggtitle('uncertainty') +
+  theme(axis.text.x = element_text(angle = 50))
+
+
+```
+
+
 ### Investigate outlying communities
 
 ```{r comm_plot}
