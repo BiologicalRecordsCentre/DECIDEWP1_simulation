@@ -20,8 +20,14 @@ extract_predictions <- function(community_folder, community_version, AS_version,
   #path to initial community folder
   community_file <- paste0(community_folder, basename(as.character(community_folder)),"_initial.rds")
   
+  print('these are the comm files')
+  print(community_file)
+  
   #read in community data
   community <- readRDS(community_file)
+  
+  print('loaded community file')
+  
   
   #set community name
   community_name <- basename(as.character(community_folder))
@@ -40,6 +46,8 @@ extract_predictions <- function(community_folder, community_version, AS_version,
   
   # method_mod_av <- data.frame()
   # method_obsvs <- data.frame()
+  
+  print('starting species')
   
   #loop over species
   for (j in 1:length(species_list)){
@@ -93,13 +101,22 @@ extract_predictions <- function(community_folder, community_version, AS_version,
         true_prob_occ <- as.data.frame(raster::crop(community[[j]]$true_prob_occ, prediction), xy=T)
         true_pa <- as.data.frame(raster::crop(community[[j]]$pres_abs, prediction), xy=T)
         
-        # store observations
-        observations <- cbind(community = community_name,
-                              method = k,
-                              species = species_list[j], 
-                              prevalence = community[[j]]$prevalence,
-                              community[[j]]$observations)
-        
+        # find and store observations from each method
+        if(k == 'initial'){
+          observations <- cbind(community = community_name,
+                                method = k,
+                                species = species_list[j], 
+                                prevalence = community[[j]]$prevalence,
+                                community[[j]]$observations)
+        } else {
+          # read in community file after AS for all AS methods
+          as_comm <- readRDS(grep(AS_version, list.files(community_folder, pattern = k, full.names = T), value = T))
+          observations <- cbind(community = community_name,
+                                method = k,
+                                species = species_list[j], 
+                                prevalence = community[[j]]$prevalence,
+                                as_comm[[j]]$observations)
+        }
         method_mod_av <- rbind(method_mod_av, mod_average_pres_unc)
         method_obsvs <- rbind(method_obsvs, observations)
       }
