@@ -122,9 +122,9 @@ ggplot(outdf[outdf$method != 'initial',], aes(x = method, y = delta_mse, fill = 
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + 
   facet_wrap(~uptake)
 
-ggplot(outdf[outdf$method != 'initial' & outdf$uptake == '0.01',], aes(x = method, y = auc, fill = type)) +
+ggplot(outdf[outdf$method != 'initial' & outdf$uptake == '0.01',], aes(x = method, y = delta_mse, fill = type)) +
   geom_boxplot() + #outlier.shape = NA) +
-  # ylim(-0.01, 0.0175) +
+  # ylim(-0.05, 0.05) +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) + 
   facet_wrap(~uptake)
 
