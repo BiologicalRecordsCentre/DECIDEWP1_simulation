@@ -82,11 +82,17 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
         corr <- cor(raster::getValues(true_prob_occ), raster::getValues(prediction), use = "pairwise.complete")
         auc <- as.numeric(pROC::auc(raster::getValues(true_pa), raster::getValues(prediction), quiet = TRUE))
         
+        # extract mean and sd error
+        mabse <- mean((raster::getValues(true_prob_occ)-raster::getValues(prediction)), na.rm=TRUE)
+        sdabse <- sd((raster::getValues(true_prob_occ)-raster::getValues(prediction)), na.rm=TRUE)
+        
+        occprobe <- sum(raster::getValues(true_prob_occ), na.rm = T) - sum(raster::getValues(prediction), na.rm=TRUE)
+        
         #extract mean and max stdev
         mean_sd <- mean(mod_average$sd, na.rm = TRUE)
         max_sd <- max(mod_average$sd, na.rm = TRUE)
         
-        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species))
+        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species, mabse = mabse, sdabse = sdabse, occprobe = occprobe))
         
       }
     }#method loop

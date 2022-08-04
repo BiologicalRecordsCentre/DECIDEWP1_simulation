@@ -155,7 +155,7 @@ dirs <- config::get("LOTUSpaths_sim")
 # a version name that follows all the way through the community
 community_version_name = 'v4'
 
-n_communities = 1
+n_communities = 12:50
 
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 
@@ -171,7 +171,7 @@ pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd
                    simulation_run_name = 'communities_1km') # the name of the run name - don't change unless changing the resolution of the area of interest.
 
 sjob <- slurm_apply(simulate_species, pars, 
-                    jobname = 'sim_spp',
+                    jobname = paste0(community_version_name, 'sim_spp'),
                     nodes = nrow(pars), 
                     cpus_per_node = 1, 
                     submit = TRUE,

@@ -14,13 +14,13 @@ community_version = 'v4'
 # and an adaptive sampling version, which is if we want to run the adaptive sampling 
 # process more than once - these outputs are stored in the same place as the old outputs
 # must always be prefixed by asv
-AS_version = 'asv1'
+AS_version = 'asv4'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
 
-# number of communities
-n_communities = 1
+# number of communities - a vector!
+n_communities = 1:50
 
 # number of species in each community - used only in the parameter file to allow runs with different numbers of species
 n_species = 1:50
@@ -40,7 +40,7 @@ pars <- data.frame(community_file = rep(paste0(dirs$outpath, community_version, 
                    probability_weight_adj = 1,
                    weight_adj = 1, 
                    method = method,
-                   uptake = 0.1,
+                   uptake = 0.5,
                    n = 2000,
                    community_version = community_version,
                    AS_version = AS_version,

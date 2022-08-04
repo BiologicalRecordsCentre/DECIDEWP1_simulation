@@ -17,34 +17,27 @@ write = FALSE
 
 ```{r data, echo = FALSE}
 
-cdf_NULL_uptake <- read.csv('../outputs/asv1_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>%
-  mutate(uptake = 'NULL')
+obvs_df <- read.csv('../outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
+                    stringsAsFactors = FALSE)
 
-cdf_very_low_uptake_detect <- read.csv('../outputs/asv6_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = '0.01_0.2_prob_wght_adj_included')
+# load each of the evaluation files 
+cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.1')
+cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
+                            stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.01')
 
+cdf_0.5_uptake <- read.csv('../outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.5')
 
-cdf_very_low_uptake_detect2 <- read.csv('../outputs/asv8_v3combined_outputs_comm1_11_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = '0.1_0.2')
+cdf_0_uptake <- read.csv('../outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
+                         stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0')
 
-
-cdf_very_low_uptake <- read.csv('../outputs/asv5_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.01)
-
-cdf_low_uptake <- read.csv('../outputs/asv4_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.1)
-
-cdf_half_uptake <- read.csv('../outputs/asv2_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 0.5)
-
-cdf_full_uptake <- read.csv('../outputs/asv3_v3combined_outputs_comm1_50_spp50.csv', stringsAsFactors = FALSE) %>% 
-  mutate(uptake = 1) 
-
-cdf <- rbind(#cdf_NULL_uptake, 
-  cdf_very_low_uptake_detect,
-  cdf_very_low_uptake_detect2,
-  cdf_very_low_uptake, cdf_low_uptake,
-  cdf_half_uptake, cdf_full_uptake)
+# combine all the files
+cdf <- rbind(cdf_0_uptake, cdf_0.1_uptake,cdf_0.01_uptake,cdf_0.5_uptake)
 
 ```
 
@@ -108,9 +101,10 @@ comm_df <- et %>%
             init_corr = mean(init_corr, na.rm = T),
             init_auc = mean(init_auc, na.rm = T),
             init_mean_sd = mean(init_mean_sd, na.rm = T),
-            init_max_sd = max(init_max_sd, na.rm = T)) %>%
+            init_max_sd = max(init_max_sd, na.rm = T),
+            prev = median(prev)) %>%
   ungroup() %>% 
-  mutate(delta_mse = mse - init_mse,
+  mutate(delta_mse = sqrt(mse) - sqrt(init_mse),
          delta_corr = corr - init_corr,
          delta_auc = auc - init_auc,
          delta_mean_sd = mean_sd - init_mean_sd,
@@ -125,10 +119,11 @@ Figures of the difference in MSE, AUC and Correlation between adaptively sampled
 
 ```{r comm_plots_mse_auc_corr, echo = FALSE}
 
-c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2_prob_wght_adj_included' | comm_df$uptake == '0.1_0.2'),], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+c1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') +
+  # ylim(-0.01, 0.01) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta mse (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -137,7 +132,7 @@ c1 <- ggplot(comm_df[comm_df$method!='initial' & (comm_df$uptake == '0.01_0.2_pr
 c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta auc (higher = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -146,7 +141,7 @@ c2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, f
 c3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta corr (higher = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -163,6 +158,50 @@ if(write) {
 
 ```
 
+## Same figures without outliers
+
+```{r comm_plots_mse_auc_corr, echo = FALSE}
+
+cno1 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mse, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.0075, 0.005) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta mse (lower = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+cno2 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_auc, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.005, 0.009) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta auc (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+
+cno3 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_corr, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.01, 0.015) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('delta corr (higher = better)') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
+  scale_fill_discrete(name = 'Uptake')
+
+comb_plot_comm_no <- cno1+cno2+cno3 + plot_layout(guides = 'collect')
+comb_plot_comm_no
+
+if(write) {
+  
+  ggsave(comb_plot_comm_no, filename = '../outputs/plots/combined_delta_plot_uptake_no_outliers.tiff', 
+         width = 12, height = 5)
+  
+}
+
+```
 
 Figures of the difference in mean and maximum predictive variance between adaptively sampled models and initial models.
 
@@ -173,7 +212,7 @@ Figures of the difference in mean and maximum predictive variance between adapti
 c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_sd, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta mean predictive\nvariance (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
@@ -181,12 +220,20 @@ c4 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_mean_s
 c5 <- ggplot(comm_df[comm_df$method!='initial',], aes(x=method, y = delta_max_sd, fill = factor(uptake))) +
   geom_boxplot() +
   theme_classic() + 
-  # geom_hline(yintercept = 0, linetype = 'dashed') + 
+  geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') + ylab('delta max predictive\nvariance (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
   scale_fill_discrete(name = 'Uptake')
 
-c4|c5
+comb_plot_comm_mn_max <- c4|c5 + plot_layout(guides = 'collect')
+comb_plot_comm/comb_plot_comm_mn_max 
+
+if(write) {
+  
+  ggsave(comb_plot_comm_mn_max, filename = '../outputs/plots/combined_delta_plot_uptake_mn_mx_predvar_0.1_comm1_11.tiff', 
+         width = 12, height = 5)
+  
+}
 
 
 ```
@@ -198,9 +245,10 @@ c4|c5
 ```{r indiv_plots_mse_auc_corr_prev, warning = F, message = F, echo = FALSE, fig.width = 12}
 
 prc1 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_mse, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.02, 0.015) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -213,9 +261,10 @@ prc1 <- ggplot(et[et$method!='initial',],
 
 
 prc2 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_auc, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_auc, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.01, 0.04) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -228,9 +277,10 @@ prc2 <- ggplot(et[et$method!='initial',],
 
 
 prc3 <- ggplot(et[et$method!='initial',], 
-               aes(x=prevalence, y = delta_corr, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
-  # geom_point(alpha = 0.5) +
-  geom_smooth(se = T) +
+               aes(x=prevalence, y = delta_corr, linetype = factor(uptake), 
+                   col = factor(uptake), pch = factor(uptake))) +
+  geom_point(alpha = 0.5) +
+  # geom_smooth(se = T) +
   theme_classic() + 
   # ylim(-0.05, 0.075) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
@@ -248,9 +298,10 @@ prc1|prc2|prc3 + plot_layout(guides = 'collect')
 ggplot(et[et$method!='initial',], 
        aes(x=prevalence, y = delta_mse, linetype = factor(uptake), col = factor(uptake), pch = factor(uptake))) +
   # geom_point(alpha = 0.5) +
-  geom_smooth(se = T, alpha = 0.1) +
+  geom_density2d() +
+  # geom_smooth(se = T, alpha = 0.1) +
   theme_classic() + 
-  # ylim(-0.02, 0.015) +
+  # ylim(-0.0075, 0.0075) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('Prevalence') + ylab('delta mse (lower = better)') +
   theme(axis.text.x = element_text(angle = 45, vjust = 1.1, hjust=1)) +
@@ -261,6 +312,143 @@ ggplot(et[et$method!='initial',],
 
 ```
 
+
+### percentage improvement in models
+
+
+############################==== CREATE NEW R SCRIPT FOR THIS SECTION
+
+
+```{r}
+
+etp <- et %>% 
+  mutate(prev_cat = cut(prevalence, 10),
+         auc_cat = cut(init_auc, 10),
+         mse_cat = cut(init_mse, 10),
+         corr_cat = cut(init_corr, 10)) %>% 
+  # rowwise() %>% 
+  mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
+         perc_inc_corr = (delta_corr)/(init_corr)*100,
+         perc_inc_mse = (delta_mse)/(init_mse)*100,
+         perc5_imp_auc = ifelse(perc_inc_auc>=1, 1, 
+                                ifelse(perc_inc_auc<= -1, -1, 0)),
+         perc5_imp_corr = ifelse(perc_inc_corr>=1, 1, 
+                                 ifelse(perc_inc_corr<= -1, -1, 0)),
+         perc5_imp_mse = ifelse(perc_inc_mse<= -1, 1, 
+                                ifelse(perc_inc_mse>= 1, -1, 0)))# 1, 
+# ifelse(perc_inc_auc<(-5), -1, 0)))
+
+
+etp %>% 
+  group_by(prev_cat) %>% 
+  tally() %>% 
+  ggplot(aes(prev_cat, n, label=n)) +
+  geom_point() +
+  ylab('data points per prevalence category') +
+  geom_text(hjust=-0.2, vjust=0)
+
+```
+
+#### prevalence vs improvement
+
+```{r}
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = prev_cat, fill = factor(perc5_imp_auc))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = prev_cat, fill = factor(perc5_imp_mse))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = prev_cat, fill = factor(perc5_imp_corr))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+```
+
+
+```{r}
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = auc_cat, fill = factor(perc5_imp_auc))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = mse_cat, fill = factor(perc5_imp_mse))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), aes(x = corr_cat, fill = factor(perc5_imp_corr))) +
+  geom_bar(position="fill") +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+```
+
+### Number of models with >X % increase
+
+```{r}
+
+
+# number of models with > 1% increase
+nmods <- etp %>%
+  group_by(community, method, uptake) %>%
+  summarise(n_mods_auc_1 = sum(perc_inc_auc>1, na.rm = T),
+            n_mods_auc_2 = sum(perc_inc_auc>2, na.rm = T),
+            n_mods_auc_5 = sum(perc_inc_auc>5, na.rm = T),
+            n_mods_mse_1 = sum(perc_inc_mse< -1, na.rm = T),
+            n_mods_mse_2 = sum(perc_inc_mse< -2, na.rm = T),
+            n_mods_mse_5 = sum(perc_inc_mse< -5, na.rm = T),
+            n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = T),
+            n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = T),
+            n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = T)) 
+
+head(nmods)
+
+nmods_l <- pivot_longer(nmods, cols = 4:12) %>% 
+  rowwise() %>% 
+  mutate(eval_type = ifelse(grepl(x = name, pattern = 'auc'), 'auc',
+                            ifelse(grepl(x = name, pattern = 'mse'), 'mse', 
+                                   ifelse(grepl(x = name, pattern = 'corr'), 'corr', 'WRONG'))),
+         inc_amount = as.numeric(gsub("[^\\d]+", "", name, perl=TRUE)))
+
+head(nmods_l)
+
+ggplot(subset(nmods_l, uptake != 0 & method != 'initial'), 
+       aes(x = method, y = value, fill = factor(inc_amount))) +
+  geom_boxplot() +
+  facet_wrap(eval_type~uptake,nrow = 3) +
+  ylab('number of models') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial'), 
+       aes(x = method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  facet_wrap(~eval_type,ncol = 3) +
+  ylab('number of models') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
 ### Do bad models improve more?
 
 No...
@@ -268,7 +456,17 @@ No...
 ```{r good_vs_bad}
 
 ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = factor(uptake))) +
-  # geom_point() +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~method) +
+  theme_bw() +
+  xlab('AUC initial model') + 
+  ylab('AUC final model') +
+  scale_color_discrete(name = 'Uptake')
+
+
+ggplot(data = et[et$method != 'initial',], aes(x = init_mse, y = mse, colour = factor(uptake))) +
+  geom_point() +
   geom_smooth() +
   facet_wrap(~method) +
   theme_bw() +
@@ -280,22 +478,114 @@ ggplot(data = et[et$method != 'initial',], aes(x = init_auc, y = auc, colour = f
 
 ```
 
+
+###Are the same species improving in each method?
+
+No
+
 ```{r}
 
-# View(et)
+et[et$method != 'initial',] %>% 
+  group_by(method, uptake) %>% 
+  arrange(delta_auc)
 
-library(ggridges)
+subset(et, method == 'coverage' & uptake == 0.01 & community == 'v4community_1_50_sim') %>% 
+  ggplot(aes(x=reorder(species, delta_auc), y = delta_auc, col = prevalence)) +
+  geom_point() +
+  ggtitle('coverage') +
+  theme(axis.text.x = element_text(angle = 50))
 
-ggplot(et, aes(x = community, y = delta_mse)) +
-  geom_boxplot()
+subset(et, method == 'uncertainty' & uptake == 0.01 & community == 'v4community_1_50_sim') %>% 
+  ggplot(aes(x=reorder(species, delta_auc), y = delta_auc, col = prevalence)) +
+  geom_point() +
+  ggtitle('uncertainty') +
+  theme(axis.text.x = element_text(angle = 50))
 
-ggplot(data = et[et$method!='initial',], aes(x =  delta_mse, y = factor(uptake), fill = factor(uptake)))+
-  geom_density_ridges(alpha = 0.5) +
-  geom_vline(xintercept = 0, linetype = 'dashed') +
-  theme_bw() +
-  facet_wrap(~method, scales = 'free')
 
 ```
+
+
+### Investigate outlying communities
+
+```{r comm_plot}
+
+# weird distributions - very narrow
+et %>% 
+  filter(uptake == 0.1) %>% 
+  pivot_longer(cols = grep('delta_', colnames(et), value = T)) %>% 
+  ggplot(aes(x = value)) +
+  geom_histogram() +
+  facet_wrap(~name, scales = 'free')
+
+# look at each metric across communities 
+et %>% 
+  filter(uptake == 0.1) %>% 
+  pivot_longer(cols = grep('delta_', colnames(et), value = T)) %>%
+  mutate(community = gsub("v4community_", '', community)) %>% 
+  ggplot(aes(y = value, x = community)) +
+  geom_boxplot() +
+  facet_wrap(~name, scales = 'free') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
+
+# look at each community - mse
+ggplot(et, aes(x = community, y = delta_mse)) +
+  geom_boxplot() +
+  # ylim(-.001, .001) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+```{r}
+
+p1 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = mse, fill = community)) +
+  geom_boxplot()
+p2 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = init_mse, fill = community)) +
+  geom_boxplot()
+
+
+p3 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = auc, fill = community)) +
+  geom_boxplot()
+p4 <- ggplot(subset(et, uptake == 0.1), aes(x=method, y = init_auc, fill = community)) +
+  geom_boxplot()
+
+
+p1/p2/p3/p4 + plot_layout(guides = 'collect')
+
+```
+
+
+### percent increase in observations
+
+```{r}
+
+head(obvs_df)
+
+odf <- obvs_df %>% 
+  dplyr::select(-X, -as_version) %>% 
+  distinct()
+
+head(odf)
+
+ggplot(odf, aes(x = meth, y = perc_increase)) +
+  geom_boxplot()
+
+ggplot(odf, aes(x= initial_obvs, y = new_observations, col = log(perc_increase))) +
+  geom_point() +
+  scale_colour_viridis()
+
+ggplot(odf, aes(x= initial_obvs, y = new_observations, col = meth)) +
+  geom_point() +
+  scale_colour_viridis_d()
+
+obvs_df %>% 
+  ggplot(aes(x = meth, y = perc_increase)) +
+  geom_boxplot() +
+  facet_wrap(~as_version)
+
+```
+
 
 ### problem with community 22?
 
