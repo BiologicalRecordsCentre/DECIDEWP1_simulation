@@ -3,7 +3,7 @@ extract_predictions <- function(community_folder, community_version, AS_version,
   
   require(raster)
   require(readr)
-  
+
   #read in all model files for each species
   
   model_types <- sapply(strsplit(as.character(model),","), function(x) trimws(x))
@@ -131,6 +131,7 @@ extract_predictions <- function(community_folder, community_version, AS_version,
     
     # save observations file
     write_csv(method_obsvs, file = paste0(community_folder, 'preds_and_obsvs/', species, '_', AS_version, '_', community_name, "_observations.csv"))
+
     
   }#species loop
   
