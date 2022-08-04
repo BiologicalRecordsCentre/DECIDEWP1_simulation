@@ -14,7 +14,7 @@ test.Rmd
 
 data/
 outputs/
-config_files/*
+scripts/lotus/config_files/*
 *.yml
 
 # Session Data files
