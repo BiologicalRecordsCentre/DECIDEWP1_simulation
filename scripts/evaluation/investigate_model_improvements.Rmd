@@ -1,0 +1,499 @@
+---
+title: "Investigating model improvements"
+author: "TMM"
+date: "2022-08-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(include = FALSE, echo = FALSE, fig.width = 10, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(patchwork)
+
+write = FALSE
+
+```
+
+
+```{r data, echo = FALSE}
+
+obvs_df <- read.csv('../outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
+                    stringsAsFactors = FALSE)
+
+# load each of the evaluation files 
+cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.1',
+         asv = 'asv1')
+cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
+                            stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.01',
+         asv = 'asv2')
+
+cdf_0.5_uptake <- read.csv('../outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
+                           stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0.5',
+         asv = 'asv4')
+
+cdf_0_uptake <- read.csv('../outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
+                         stringsAsFactors = FALSE) %>%
+  mutate(uptake = '0',
+         asv = 'asv3')
+
+# combine all the files
+cdf <- rbind(cdf_0_uptake, cdf_0.1_uptake,cdf_0.01_uptake,cdf_0.5_uptake)
+
+```
+
+
+```{r calculate_differences}
+
+init_tab <- cdf[cdf$method =='initial',]
+colnames(init_tab) <- paste0('initial_', colnames(init_tab))
+et <- cdf
+
+et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
+                                            paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
+                                          paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_mean_sd <- init_tab$initial_mean_sd[match(paste0(et$species, et$community),
+                                                  paste0(init_tab$initial_species, init_tab$initial_community))]
+et$init_max_sd <- init_tab$initial_max_sd[match(paste0(et$species, et$community),
+                                                paste0(init_tab$initial_species, init_tab$initial_community))]
+
+
+## get differences
+et <- et %>% 
+  mutate(delta_mse = mse - init_mse,
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+```
+
+
+## Improvements due to increases in observations
+
+```{r load_obs}
+
+## load all the observations for a given community 
+
+###### This can be automated for more adaptive sampling versions
+
+df <- read_csv('../outputs/v4Community/asv1_v4all_observations.csv') %>% 
+  mutate(asv = paste0('asv', 1))
+
+# initial locations
+init <- df[df$method == 'initial',]
+
+# all others
+meths <- df#[df$method != 'initial',]
+
+# remove initial locations - only looking at new locations
+new_locs <- meths[!meths$id %in% init$id,] ## id is lon lat id
+
+# initial locations for each species
+sp_init_locs <- init %>% 
+  na.omit() %>% 
+  group_by(method, community, species, prevalence, asv) %>% 
+  summarise(n = sum(Observed)) %>% 
+  mutate(id = paste(community, species, prevalence, asv, sep = '_'))
+
+# new locations for each species
+sp_new_locs <- new_locs %>% 
+  na.omit() %>% 
+  group_by(method, community, species, prevalence, asv) %>% 
+  summarise(n = sum(Observed)) %>% 
+  mutate(id = paste(community, species, prevalence, asv, sep = '_'))
+
+# bind the two together
+init_new_locs <- sp_new_locs %>% 
+  rowwise() %>% 
+  mutate(n_init_obs = sp_init_locs$n[match(id, sp_init_locs$id)])
+
+# ggplot(init_new_locs, aes(x = n_init_obs, y = n, col = method)) +
+#   # geom_point() +
+#   geom_smooth() +
+#   ylab('n new observations') + xlab('n initial observations')
+
+# head(init_new_locs)
+
+```
+
+
+```{r set_perc_change}
+
+p_c <- 5
+
+```
+
+
+```{r match_to_et}
+
+nobvs_pl <- et %>% 
+  mutate(id = paste(community, species, prevalence, asv, sep = '_'),
+         obvs_init = init_new_locs$n_init_obs[match(id, init_new_locs$id)],
+         new_obvs = init_new_locs$n[match(id, init_new_locs$id)],
+         nobvs_cat = cut(new_obvs, 10),
+         perc_inc_auc = (delta_auc)/(init_auc)*100,
+         perc_inc_corr = (delta_corr)/(init_corr)*100,
+         perc_inc_mse = (delta_mse)/(init_mse)*100,
+         perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
+                               ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
+         perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
+                                ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
+         perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
+                               ifelse(perc_inc_mse>= p_c, -p_c, 0))) %>% 
+  filter(method!='initial') %>% 
+  na.omit
+
+```
+
+Going to investigate the amount of improvement against the number of new data points added during the adaptive sampling. First testing with just MSE. 
+
+Cone-shaped again! Going to do the proportion of models that have improved by `r p_c`% for a discretionised number of observations instead.
+
+```{r new_obvs_eval_plot, include = T}
+
+ggplot(nobvs_pl, aes(x = new_obvs, y = delta_mse)) +
+  geom_point() +
+  ylab('MSE improvement\n(lower = better)') +
+  xlab('Number new observations') +
+  facet_wrap(~method) +
+  theme_bw()
+
+
+```
+
+Going to split it up by a 10-level categorical number of new observations. First let's check how many data points per category.
+
+```{r plot_nobs_cat, include = T}
+
+nobvs_pl %>% 
+  na.omit() %>% 
+  group_by(nobvs_cat) %>% 
+  tally() %>% 
+  ggplot(aes(nobvs_cat, n, label=n)) +
+  geom_point() +
+  ylab('Number data points') +
+  xlab('Number new observations category') +
+  geom_text(hjust=-0.2, vjust=0) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+```
+
+
+Now we look at the number of models that improve and disimprove by `r p_c`% in each category. Currently, this is only for the 0.1 uptake method but will run all the others eventually.
+
+Legend: -`r p_c` = worsened by >`r p_c`%, `r p_c` = improved by >=`r p_c`%, 0 = change in either direction <1%. 
+
+
+```{r pcchg_plots_new_obs, include = T}
+
+ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')), 
+       aes(x = nobvs_cat, fill = factor(perc_imp_auc))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'AUC') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')), 
+       aes(x = nobvs_cat, fill = factor(perc_imp_mse))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'MSE') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')), 
+       aes(x = nobvs_cat, fill = factor(perc_imp_corr))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'Correlation') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+```
+
+## Percentage change in models
+
+Now we're going to use the same type of plots to investigate the proportion of models changing against prevalence, initial MSE, AUC and Correlation.
+
+First, look at the number of data points per group.
+
+```{r calc_perc_change}
+
+etp <- et %>% 
+  mutate(prev_cat = cut(prevalence, 10),
+         auc_cat = cut(init_auc, 10),
+         mse_cat = cut(init_mse, 10),
+         corr_cat = cut(init_corr, 10)) %>% 
+  # rowwise() %>% 
+  mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
+         perc_inc_corr = (delta_corr)/(init_corr)*100,
+         perc_inc_mse = (delta_mse)/(init_mse)*100,
+         perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
+                               ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
+         perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
+                                ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
+         perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
+                               ifelse(perc_inc_mse>= p_c, -p_c, 0)))# 1, 
+# ifelse(perc_inc_auc<(-5), -1, 0)))
+
+
+```
+
+
+```{r plot_n_obs, include = T}
+
+etp %>% 
+  na.omit() %>% 
+  group_by(prev_cat) %>% 
+  tally() %>% 
+  ggplot(aes(prev_cat, n, label=n)) +
+  geom_point() +
+  ylab('Number data points') +
+  xlab('Prevalence category') +
+  geom_text(hjust=-0.2, vjust=0) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+etp %>% 
+  na.omit() %>% 
+  group_by(auc_cat) %>% 
+  tally() %>% 
+  ggplot(aes(auc_cat, n, label=n)) +
+  geom_point() +
+  ylab('Number data points') +
+  xlab('AUC category') +
+  geom_text(hjust=-0.2, vjust=0) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+etp %>% 
+  na.omit() %>% 
+  group_by(mse_cat) %>% 
+  tally() %>% 
+  ggplot(aes(mse_cat, n, label=n)) +
+  geom_point() +
+  ylab('Number data points') +
+  xlab('MSE category') +
+  geom_text(hjust=-0.2, vjust=0) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+etp %>% 
+  na.omit() %>% 
+  group_by(corr_cat) %>% 
+  tally() %>% 
+  ggplot(aes(corr_cat, n, label=n)) +
+  geom_point() +
+  ylab('Number data points') +
+  xlab('Correlation category') +
+  geom_text(hjust=-0.2, vjust=0) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
+```
+
+Now look at number of models changing in each of the prevalence categories for all of the uptake values (0.01, 0.1, 0.5).
+
+Prevalence vs proportion of models that changed by >=`r p_c`%. -`r p_c` = worsened by >`r p_c`%, `r p_c` = improved by >=`r p_c`%, 0 = change in either direction <1%. 
+
+```{r plots_prop, include = T}
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = prev_cat, fill = factor(perc_imp_auc))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'AUC') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = prev_cat, fill = factor(perc_imp_mse))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'MSE') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = prev_cat, fill = factor(perc_imp_corr))) +
+  geom_bar(position="fill") +
+  scale_fill_discrete(name = 'Correlation') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+```
+
+Amount of improvement vs performance of initial model.
+
+```{r perf_init_new, include = T}
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = auc_cat, fill = factor(perc_imp_auc))) +
+  geom_bar(position="fill") +
+  xlab('Initial model AUC') +
+  scale_fill_discrete(name = 'AUC') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = mse_cat, fill = factor(perc_imp_mse))) +
+  geom_bar(position="fill") +
+  xlab('Initial model MSE') +
+  scale_fill_discrete(name = 'MSE') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+
+ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
+       aes(x = corr_cat, fill = factor(perc_imp_corr))) +
+  geom_bar(position="fill") +
+  xlab('Initial model Correlation') +
+  scale_fill_discrete(name = 'Correlation') +
+  # ylim(0,0.25) +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+
+```
+
+
+### Number of models with >X % increase
+
+The number of models that increase by X% could be a good indication of how well each of the adaptive sampling methods perform. The plot below shows the each of the number of models improving for each of the adaptive sampling methods split by each evaluation metric, uptake value and percentage improvement. We considered the number of models improving by 1, 2 and 5%.
+
+```{r n_mods_inc_pc}
+
+# number of models with > x% increase
+nmods <- etp %>%
+  group_by(community, method, uptake) %>%
+  summarise(n_mods_auc_1 = sum(perc_inc_auc>1, na.rm = T),
+            n_mods_auc_2 = sum(perc_inc_auc>2, na.rm = T),
+            n_mods_auc_5 = sum(perc_inc_auc>5, na.rm = T),
+            n_mods_mse_1 = sum(perc_inc_mse< -1, na.rm = T),
+            n_mods_mse_2 = sum(perc_inc_mse< -2, na.rm = T),
+            n_mods_mse_5 = sum(perc_inc_mse< -5, na.rm = T),
+            n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = T),
+            n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = T),
+            n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = T)) 
+
+head(nmods)
+
+nmods_l <- pivot_longer(nmods, cols = 4:12) %>% 
+  rowwise() %>% 
+  mutate(eval_type = ifelse(grepl(x = name, pattern = 'auc'), 'auc',
+                            ifelse(grepl(x = name, pattern = 'mse'), 'mse', 
+                                   ifelse(grepl(x = name, pattern = 'corr'), 'corr', 'WRONG'))),
+         inc_amount = as.numeric(gsub("[^\\d]+", "", name, perl=TRUE)))
+
+```
+
+
+```{r n_mods_inc_pc_plot, include = T}
+
+ggplot(subset(nmods_l, uptake != 0 & method != 'initial'), 
+       aes(x = method, y = value, fill = factor(inc_amount))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "% improvement") +
+  facet_wrap(eval_type~uptake,nrow = 3) +
+  ylab('Number of models') +
+  xlab("") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial'), 
+#        aes(x = method, y = value, fill = factor(uptake))) +
+#   geom_boxplot() +
+#   scale_fill_discrete(name = "Proportion uptake") +
+#   facet_wrap(inc_amount~eval_type,ncol = 3) +
+#   ylab('Number of models') +
+#   xlab('') +
+#   ggtitle('Number of models with 1% improvement for different uptake values') +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+```{r aggregate_community}
+
+## average across communities
+comm_df <- et %>%
+  group_by(community, method, uptake) %>%
+  summarise(mse = mean(mse, na.rm = T),
+            corr = mean(corr, na.rm = T),
+            auc = mean(auc, na.rm = T),
+            mean_sd = mean(mean_sd, na.rm = T),
+            max_sd = max(max_sd, na.rm = T),
+            prev = median(prevalence, na.rm = T),
+            init_mse = mean(init_mse, na.rm = T),
+            init_corr = mean(init_corr, na.rm = T),
+            init_auc = mean(init_auc, na.rm = T),
+            init_mean_sd = mean(init_mean_sd, na.rm = T),
+            init_max_sd = max(init_max_sd, na.rm = T),
+            prev = median(prev)) %>%
+  ungroup() %>% 
+  mutate(delta_mse = sqrt(mse) - sqrt(init_mse),
+         delta_corr = corr - init_corr,
+         delta_auc = auc - init_auc,
+         delta_mean_sd = mean_sd - init_mean_sd,
+         delta_max_sd = max_sd - init_max_sd)
+
+comm_df_l <- comm_df %>% 
+  dplyr::filter(method!='initial', uptake!=0) %>% 
+  dplyr::select(community, method, uptake, mse = delta_mse, corr = delta_corr, auc = delta_auc) %>% 
+  pivot_longer(cols = 4:6)
+head(comm_df_l)
+
+```
+
+For this final plot, the top row shows community level change in performance plots for each adaptive sampling method and evaluation metric. The bottom row shows the number of models that have increased by >1% and different levels of uptake for each adaptive sampling method and evaluation metric.  
+
+```{r community_pls_numb_model_plot, include = T}
+
+## community results
+cpl_comm <- ggplot(comm_df_l, aes(x=method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "Proportion uptake") +
+  facet_wrap(~name) +
+  theme_bw() +
+  ylab('Change in model performance\n(new - initial)') +
+  xlab('') +
+  theme(axis.text.x = element_blank())#element_text(angle = 45, hjust = 1))
+
+## number model plots
+nmods_pl <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial'), 
+       aes(x = method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "Proportion uptake") +
+  facet_wrap(~eval_type,ncol = 3) +
+  ylab('Number of models\n>1% improvement') +
+  xlab('') +
+  # ggtitle('Number of models with 1% improvement for different uptake values') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+cpl_comm/nmods_pl + plot_layout(guides = 'collect')
+
+```
+
