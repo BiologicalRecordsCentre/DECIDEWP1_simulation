@@ -53,6 +53,8 @@ extract_predictions <- function(community_folder, community_version, AS_version,
   #loop over species
   for (j in 1:length(species_list)){
     
+    print(paste('species', j))
+    
     species <- species_list[j]
     print(species)
     

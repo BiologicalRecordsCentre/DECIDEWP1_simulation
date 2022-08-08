@@ -19,25 +19,25 @@ write = FALSE
 
 ```{r data, echo = FALSE}
 
-obvs_df <- read.csv('../outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
+obvs_df <- read.csv('../../outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
                     stringsAsFactors = FALSE)
 
 # load each of the evaluation files 
-cdf_0.1_uptake <- read.csv('../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+cdf_0.1_uptake <- read.csv('../../outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.1',
          asv = 'asv1')
-cdf_0.01_uptake <- read.csv('../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
+cdf_0.01_uptake <- read.csv('../../outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
                             stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.01',
          asv = 'asv2')
 
-cdf_0.5_uptake <- read.csv('../outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
+cdf_0.5_uptake <- read.csv('../../outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
                            stringsAsFactors = FALSE) %>%
   mutate(uptake = '0.5',
          asv = 'asv4')
 
-cdf_0_uptake <- read.csv('../outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
+cdf_0_uptake <- read.csv('../../outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
                          stringsAsFactors = FALSE) %>%
   mutate(uptake = '0',
          asv = 'asv3')
@@ -85,7 +85,7 @@ et <- et %>%
 
 ###### This can be automated for more adaptive sampling versions
 
-df <- read_csv('../outputs/v4Community/asv1_v4all_observations.csv') %>% 
+df <- read_csv('../../outputs/v4Community/asv1_v4all_observations.csv') %>% 
   mutate(asv = paste0('asv', 1))
 
 # initial locations
@@ -114,7 +114,8 @@ sp_new_locs <- new_locs %>%
 # bind the two together
 init_new_locs <- sp_new_locs %>% 
   rowwise() %>% 
-  mutate(n_init_obs = sp_init_locs$n[match(id, sp_init_locs$id)])
+  mutate(n_init_obs = sp_init_locs$n[match(id, sp_init_locs$id)],
+         id2 = paste(community, method, species, prevalence, asv, sep = '_'))
 
 # ggplot(init_new_locs, aes(x = n_init_obs, y = n, col = method)) +
 #   # geom_point() +
@@ -136,9 +137,9 @@ p_c <- 5
 ```{r match_to_et}
 
 nobvs_pl <- et %>% 
-  mutate(id = paste(community, species, prevalence, asv, sep = '_'),
-         obvs_init = init_new_locs$n_init_obs[match(id, init_new_locs$id)],
-         new_obvs = init_new_locs$n[match(id, init_new_locs$id)],
+  mutate(id = paste(community, method, species, prevalence, asv, sep = '_'),
+         obvs_init = init_new_locs$n_init_obs[match(id, init_new_locs$id2)],
+         new_obvs = init_new_locs$n[match(id, init_new_locs$id2)],
          nobvs_cat = cut(new_obvs, 10),
          perc_inc_auc = (delta_auc)/(init_auc)*100,
          perc_inc_corr = (delta_corr)/(init_corr)*100,
@@ -167,6 +168,15 @@ ggplot(nobvs_pl, aes(x = new_obvs, y = delta_mse)) +
   facet_wrap(~method) +
   theme_bw()
 
+ggplot(nobvs_pl, aes(x = new_obvs)) +
+  geom_histogram() +
+  facet_wrap(method~uptake) +
+  theme_bw()
+
+ggplot(nobvs_pl, aes(x = prevalence, y = new_obvs)) +
+  geom_point() +
+  facet_wrap(method~uptake) +
+  theme_bw()
 
 ```
 

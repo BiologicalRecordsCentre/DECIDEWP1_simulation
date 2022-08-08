@@ -3,7 +3,7 @@
 library(tidyverse)
 
 ## to be run on jasmin
-for(i in 2:4){
+for(i in 1:4){
   method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
   
   AS_version = paste0('asv',i)
@@ -26,31 +26,54 @@ for(i in 2:4){
     
     for(sp in 1:50){
       
-      if(file.size(fls_ls[sp])==3) next() ## skip species when no observations - not ideal... 
-      
-      # initial observations
+      # initial observations - species is in order 1:50 in community 
       init_obs <- obvsinit[[sp]]$observations %>% #[!is.na(obvsinit[[sp]]$observations$Observed),] %>% 
         mutate(method = 'initial',
                id = paste(lon, lat))
       # print(dim(init_obs))
       
+      # find the right species because files list not in same order as in the community
+      sp_index <- (grep(pattern = paste0('Sp',sp, '_'), x = fls_ls))
       
-      # all observations after AS
-      o <- read.csv(fls_ls[sp]) %>% 
-        mutate(id = paste(lon, lat)) %>% 
-        filter(!is.na(Observed))
-      # print(dim(o)) ## this is a bigger DF than initial obs because it has all methods  
+      if(file.size(fls_ls[sp_index])<=3) { ## skip species when no observations - not ideal... 
+        
+        print(paste("species", sp, "has 0 observations"))
+        
+        # get filename structure
+        nms <- strsplit(basename(fls_ls[sp_index]), '_')[[1]]
+        
+        o <- data.frame(X = NA,
+                        community = paste(nms[3],nms[4],nms[5],nms[6], sep = '_'),
+                        method = NA,
+                        species = nms[1],
+                        prevalence = obvsinit[[sp]]$prevalence,
+                        lon = NA,
+                        lat = NA,
+                        Real = NA,
+                        Observed = 0,
+                        id = NA)
+        
+      } else {
+        
+        # all observations after AS
+        o <- read.csv(fls_ls[sp_index]) %>% 
+          mutate(id = paste(lon, lat)) %>% 
+          filter(!is.na(Observed))
+        # print(dim(o)) ## this is a bigger DF than initial obs because it has all methods  
+        
+        if(!is.null(o$X)) o$X <- NULL
+        
+        # remove initial observations
+        new_locs <- o[!o$id %in% init_obs$id,] %>% 
+          group_by(community, method, species, prevalence) %>%
+          summarise(n_obs = sum(Observed, na.rm = T))
+        
+        spp_obs <- rbind(spp_obs, o)
+        
+        # print(new_locs)
+      }
       
-      # remove initial observations
-      new_locs <- o[!o$id %in% init_obs$id,] %>% 
-        group_by(community, method, species, prevalence) %>%
-        summarise(n_obs = sum(Observed, na.rm = T))
-      
-      spp_obs <- rbind(spp_obs, o)
-      
-      # print(new_locs)
     }
-    
     comm_tally <- rbind(comm_tally, spp_obs)
     
     
