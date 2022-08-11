@@ -42,8 +42,7 @@ for(i in 1:4){
         # get filename structure
         nms <- strsplit(basename(fls_ls[sp_index]), '_')[[1]]
         
-        o <- data.frame(X = NA,
-                        community = paste(nms[3],nms[4],nms[5],nms[6], sep = '_'),
+        o <- data.frame(community = paste(nms[3],nms[4],nms[5],nms[6], sep = '_'),
                         method = NA,
                         species = nms[1],
                         prevalence = obvsinit[[sp]]$prevalence,
@@ -52,6 +51,8 @@ for(i in 1:4){
                         Real = NA,
                         Observed = 0,
                         id = NA)
+        
+        spp_obs <- rbind(spp_obs, o)
         
       } else {
         
@@ -63,10 +64,10 @@ for(i in 1:4){
         
         if(!is.null(o$X)) o$X <- NULL
         
-        # remove initial observations
-        new_locs <- o[!o$id %in% init_obs$id,] %>% 
-          group_by(community, method, species, prevalence) %>%
-          summarise(n_obs = sum(Observed, na.rm = T))
+        # # remove initial observations
+        # new_locs <- o[!o$id %in% init_obs$id,] %>% 
+        #   group_by(community, method, species, prevalence) %>%
+        #   summarise(n_obs = sum(Observed, na.rm = T))
         
         spp_obs <- rbind(spp_obs, o)
         
@@ -166,18 +167,21 @@ loc_summ <- new_locs %>%
 
 
 ## plots
-s1 <- ggplot(data = loc_summ, aes(x=method, y=total_obs, fill = factor(uptake))) +
+s1 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=total_obs, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Total observations') +
-  theme_classic()
-s2 <- ggplot(data = loc_summ, aes(x=method, y=diversity, fill = factor(uptake))) +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
+s2 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=diversity, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Unique species') +
-  theme_classic()
-s3 <- ggplot(data = loc_summ, aes(x=method, y=prev, fill = factor(uptake))) +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
+s3 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=prev, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Median prevalence') +
-  theme_classic()
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
 
 s1/s2/s3 +
   plot_annotation(tag_levels = 'a')
@@ -186,16 +190,27 @@ s1/s2/s3 +
 sp_div <- new_locs %>% 
   # na.omit() %>% 
   group_by(id, community, method, uptake) %>% 
-  summarise(un_spp = length(unique(species)))
+  summarise(un_spp = length(unique(species)),
+            prev = median(prevalence))
 
-ggplot(sp_div, aes(x = method,  y = un_spp, fill = factor(uptake))) +
-  geom_boxplot()
+ggplot(subset(sp_div, uptake!=0), aes(x = method,  y = un_spp, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Unique species per site') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
+
+
+ggplot(subset(sp_div, uptake!=0), aes(x = method,  y = prev, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Median prevalence per site') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
 
 
 # species-specific prevalence
 p_sum <- new_locs %>% 
   na.omit() %>% 
-  group_by(method, community, species, prevalence) %>% 
+  group_by(method, community, species, prevalence, uptake) %>% 
   tally()
 
 library(ggridges)
@@ -204,7 +219,7 @@ ggplot(p_sum, aes(x=prevalence, y = method)) +
   # xlim(0,0.6) + 
   theme_classic()
 
-ggplot(p_sum, aes(y=prevalence, x = method, fill = method)) +
+ggplot(p_sum, aes(y=prevalence, x = method, fill = factor(uptake))) +
   geom_jitter(alpha = 0.2) +
   geom_violin(alpha = 0.75) +
   theme_classic() +
@@ -222,7 +237,7 @@ new_locs %>%
   ggplot(aes(x=method, y=new_locs)) + 
   geom_boxplot()
 
-## that's not good - actually get more new locations using model-based approaches... Is it a problem?
+## get more new locations using model-based approaches... Is it a problem?
 
 
 

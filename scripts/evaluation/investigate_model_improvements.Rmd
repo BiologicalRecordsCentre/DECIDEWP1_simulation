@@ -10,6 +10,7 @@ output: html_document
 knitr::opts_chunk$set(include = FALSE, echo = FALSE, fig.width = 10, message = FALSE, warning = FALSE)
 
 library(tidyverse)
+library(ggridges)
 library(patchwork)
 
 write = FALSE
@@ -76,17 +77,55 @@ et <- et %>%
 
 ```
 
+```{r cut_func}
+
+
+# # function to cut data into equal numbers and return the correct labels (min and max of the group) 
+# ntile_cut <- function(cdat, ngroups = 10, rounding = 4, return_df = FALSE) {
+#   
+#   # get the groups
+#   cats <- dplyr::ntile(cdat, ngroups)
+#   
+#   # convert into data frame
+#   outdf <- data.frame(cdat,cats)
+#   
+#   # get the values (min+max for each group) and create labels for the group
+#   cat_labels <- tapply(outdf$cdat, outdf$cats, 
+#                        FUN = function(x) paste(round(min(x),rounding), round(max(x), rounding), sep = '_'))
+#   
+#   # convert to data frame for matching
+#   cats_df <- data.frame(grp=1:ngroups,cat_labels)
+#   
+#   # bind the data frame and the groups
+#   outdf$cat_labels <- cats_df$cat_labels[match(outdf$cats, cats_df$grp)]
+#   
+#   if(return_df) {return(outdf)} else {return(outdf$cat_labels)}
+#   
+# }
+
+
+```
+
 
 ## Improvements due to increases in observations
 
 ```{r load_obs}
 
 ## load all the observations for a given community 
+asv1 <- read_csv('../../outputs/v4Community/asv1_v4all_observations.csv') %>% 
+  mutate(uptake = 0.1,
+         asv = 'asv1')
+asv2 <- read_csv('../../outputs/v4Community/asv2_v4all_observations.csv') %>% 
+  mutate(uptake = 0.01,
+         asv = 'asv2')
+asv3 <- read_csv('../../outputs/v4Community/asv3_v4all_observations.csv') %>% 
+  mutate(uptake = 0,
+         asv = 'asv3')
+asv4 <- read_csv('../../outputs/v4Community/asv4_v4all_observations.csv') %>% 
+  mutate(uptake = 0.5,
+         asv = 'asv4')
 
-###### This can be automated for more adaptive sampling versions
-
-df <- read_csv('../../outputs/v4Community/asv1_v4all_observations.csv') %>% 
-  mutate(asv = paste0('asv', 1))
+df <- rbind(asv1,asv2,asv3,asv4)
 
 # initial locations
 init <- df[df$method == 'initial',]
@@ -100,22 +139,22 @@ new_locs <- meths[!meths$id %in% init$id,] ## id is lon lat id
 # initial locations for each species
 sp_init_locs <- init %>% 
   na.omit() %>% 
-  group_by(method, community, species, prevalence, asv) %>% 
+  group_by(method, community, species, prevalence, asv, uptake) %>% 
   summarise(n = sum(Observed)) %>% 
-  mutate(id = paste(community, species, prevalence, asv, sep = '_'))
+  mutate(id = paste(community, species, prevalence, asv, uptake, sep = '_'))
 
 # new locations for each species
 sp_new_locs <- new_locs %>% 
   na.omit() %>% 
-  group_by(method, community, species, prevalence, asv) %>% 
+  group_by(method, community, species, prevalence, asv, uptake) %>% 
   summarise(n = sum(Observed)) %>% 
-  mutate(id = paste(community, species, prevalence, asv, sep = '_'))
+  mutate(id = paste(community, species, prevalence, asv, uptake, sep = '_'))
 
 # bind the two together
 init_new_locs <- sp_new_locs %>% 
   rowwise() %>% 
   mutate(n_init_obs = sp_init_locs$n[match(id, sp_init_locs$id)],
-         id2 = paste(community, method, species, prevalence, asv, sep = '_'))
+         id2 = paste(community, method, species, prevalence, asv, uptake, sep = '_'))
 
 # ggplot(init_new_locs, aes(x = n_init_obs, y = n, col = method)) +
 #   # geom_point() +
@@ -137,10 +176,10 @@ p_c <- 5
 ```{r match_to_et}
 
 nobvs_pl <- et %>% 
-  mutate(id = paste(community, method, species, prevalence, asv, sep = '_'),
+  mutate(id = paste(community, method, species, prevalence, asv, uptake, sep = '_'),
          obvs_init = init_new_locs$n_init_obs[match(id, init_new_locs$id2)],
          new_obvs = init_new_locs$n[match(id, init_new_locs$id2)],
-         nobvs_cat = cut(new_obvs, 10),
+         nobvs_cat = dplyr::ntile(new_obvs, 10),
          perc_inc_auc = (delta_auc)/(init_auc)*100,
          perc_inc_corr = (delta_corr)/(init_corr)*100,
          perc_inc_mse = (delta_mse)/(init_mse)*100,
@@ -153,6 +192,10 @@ nobvs_pl <- et %>%
   filter(method!='initial') %>% 
   na.omit
 
+# nobvs_pl <- nobvs_pl %>% 
+#   group_by(uptake, method) %>% 
+#   mutate(nobvs_cat = dplyr::ntile(new_obvs, 10))
+
 ```
 
 Going to investigate the amount of improvement against the number of new data points added during the adaptive sampling. First testing with just MSE. 
@@ -161,32 +204,50 @@ Cone-shaped again! Going to do the proportion of models that have improved by `r
 
 ```{r new_obvs_eval_plot, include = T}
 
-ggplot(nobvs_pl, aes(x = new_obvs, y = delta_mse)) +
+ggplot(subset(nobvs_pl, uptake!=0), aes(x = new_obvs, y = delta_mse)) +
   geom_point() +
   ylab('MSE improvement\n(lower = better)') +
   xlab('Number new observations') +
-  facet_wrap(~method) +
+  facet_wrap(uptake~method, ncol = 6) +
   theme_bw()
 
-ggplot(nobvs_pl, aes(x = new_obvs)) +
-  geom_histogram() +
-  facet_wrap(method~uptake) +
-  theme_bw()
-
-ggplot(nobvs_pl, aes(x = prevalence, y = new_obvs)) +
+ggplot(subset(nobvs_pl, uptake!=0), aes(x = prevalence, y = new_obvs)) +
   geom_point() +
-  facet_wrap(method~uptake) +
+  facet_wrap(uptake~method, ncol = 6) +
   theme_bw()
+
 
 ```
 
-Going to split it up by a 10-level categorical number of new observations. First let's check how many data points per category.
+Histograms of the number of species with different numbers of observations. These three plots are just three ways of presenting the same data, as I wasn't sure which was the best way to show it.
+
+```{r hists_sightings}
+
+ggplot(subset(init_new_locs, uptake!=0), aes(x = n)) +
+  geom_histogram() +
+  ylab('Number of species') +
+  facet_wrap(method~uptake, ncol = 3) +
+  theme_bw()
+
+ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = method)) +
+  geom_density_ridges(stat = "binline", alpha = 0.5) +
+  facet_wrap(~uptake) +
+  theme_bw()
+
+ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = factor(uptake))) +
+  geom_density_ridges(alpha = 0.5) +
+  theme_bw()
+
+
+```
+
+Going to split it up by a 10-level categorical number of new observations. The number First let's check how many data points per category.
 
 ```{r plot_nobs_cat, include = T}
 
 nobvs_pl %>% 
   na.omit() %>% 
-  group_by(nobvs_cat) %>% 
+  group_by(nobvs_cat, uptake, method) %>% 
   tally() %>% 
   ggplot(aes(nobvs_cat, n, label=n)) +
   geom_point() +
@@ -196,10 +257,22 @@ nobvs_pl %>%
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
 
+
+# nobvs_pl  %>% 
+#   group_by(uptake, method, nobvs_cat) %>% 
+#   tally() %>% 
+#   ggplot(aes(nobvs_cat, n, label=n)) +
+#   geom_point() +
+#   ylab('Number data points') +
+#   xlab('Number new observations category') +
+#   geom_text(hjust=-0.2, vjust=0) +
+#   theme_classic() +
+#   theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+
 ```
 
 
-Now we look at the number of models that improve and disimprove by `r p_c`% in each category. Currently, this is only for the 0.1 uptake method but will run all the others eventually.
+Now we look at the number of models that improve and disimprove by `r p_c`% in each category.
 
 Legend: -`r p_c` = worsened by >`r p_c`%, `r p_c` = improved by >=`r p_c`%, 0 = change in either direction <1%. 
 
@@ -243,10 +316,12 @@ First, look at the number of data points per group.
 ```{r calc_perc_change}
 
 etp <- et %>% 
-  mutate(prev_cat = cut(prevalence, 10),
-         auc_cat = cut(init_auc, 10),
-         mse_cat = cut(init_mse, 10),
-         corr_cat = cut(init_corr, 10)) %>% 
+  group_by(method, uptake) %>% 
+  mutate(prev_cat = dplyr::ntile(prevalence, 10),
+         auc_cat = dplyr::ntile(init_auc, 10),
+         mse_cat = dplyr::ntile(init_mse, 10),
+         corr_cat = dplyr::ntile(init_corr, 10)) %>% 
+  ungroup() %>% 
   # rowwise() %>% 
   mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
          perc_inc_corr = (delta_corr)/(init_corr)*100,
@@ -267,7 +342,7 @@ etp <- et %>%
 
 etp %>% 
   na.omit() %>% 
-  group_by(prev_cat) %>% 
+  group_by(prev_cat, method, uptake) %>% 
   tally() %>% 
   ggplot(aes(prev_cat, n, label=n)) +
   geom_point() +
@@ -279,7 +354,7 @@ etp %>%
 
 etp %>% 
   na.omit() %>% 
-  group_by(auc_cat) %>% 
+  group_by(auc_cat, method, uptake) %>% 
   tally() %>% 
   ggplot(aes(auc_cat, n, label=n)) +
   geom_point() +
@@ -291,7 +366,7 @@ etp %>%
 
 etp %>% 
   na.omit() %>% 
-  group_by(mse_cat) %>% 
+  group_by(mse_cat, method, uptake) %>% 
   tally() %>% 
   ggplot(aes(mse_cat, n, label=n)) +
   geom_point() +
@@ -303,7 +378,7 @@ etp %>%
 
 etp %>% 
   na.omit() %>% 
-  group_by(corr_cat) %>% 
+  group_by(corr_cat, method, uptake) %>% 
   tally() %>% 
   ggplot(aes(corr_cat, n, label=n)) +
   geom_point() +
