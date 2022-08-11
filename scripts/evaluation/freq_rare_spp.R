@@ -130,7 +130,19 @@ unique(obs$community)
 library(tidyverse)
 library(patchwork)
 
-df <- read_csv('outputs/v4Community/asv1_v4all_observations.csv')
+# df <- do.call(rbind, lapply(list.files('outputs/v4Community/', full.names = T, pattern = 'all_observations.csv'), read_csv))
+
+asv1 <- read_csv('outputs/v4Community/asv1_v4all_observations.csv') %>% 
+  mutate(uptake = 0.1)
+asv2 <- read_csv('outputs/v4Community/asv2_v4all_observations.csv') %>% 
+  mutate(uptake = 0.01)
+asv3 <- read_csv('outputs/v4Community/asv3_v4all_observations.csv') %>% 
+  mutate(uptake = 0)
+asv4 <- read_csv('outputs/v4Community/asv4_v4all_observations.csv') %>% 
+  mutate(uptake = 0.5)
+
+df <- rbind(asv1,asv2,asv3,asv4)
+
 head(df)
 
 # initial locations
@@ -145,30 +157,39 @@ new_locs <- meths[!meths$id %in% init$id,]
 ## some summaries
 loc_summ <- new_locs %>% 
   na.omit() %>% 
-  group_by(method, community, species, prevalence) %>% 
+  group_by(method, community, species, prevalence, uptake) %>% 
   summarise(n = sum(Observed)) %>% # number of observations of each species for all methods in each community
-  group_by(method, community) %>% # work out some community-level summaries
+  group_by(method, community, uptake) %>% # work out some community-level summaries
   summarise(total_obs = sum(n),
             diversity = length(unique(species)), # n unique species
             prev = median(prevalence)) # median prevalence
 
 
 ## plots
-s1 <- ggplot(data = loc_summ, aes(x=method, y=total_obs)) +
+s1 <- ggplot(data = loc_summ, aes(x=method, y=total_obs, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Total observations') +
   theme_classic()
-s2 <- ggplot(data = loc_summ, aes(x=method, y=diversity)) +
+s2 <- ggplot(data = loc_summ, aes(x=method, y=diversity, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Unique species') +
   theme_classic()
-s3 <- ggplot(data = loc_summ, aes(x=method, y=prev)) +
+s3 <- ggplot(data = loc_summ, aes(x=method, y=prev, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Median prevalence') +
   theme_classic()
 
 s1/s2/s3 +
   plot_annotation(tag_levels = 'a')
+
+
+sp_div <- new_locs %>% 
+  # na.omit() %>% 
+  group_by(id, community, method, uptake) %>% 
+  summarise(un_spp = length(unique(species)))
+
+ggplot(sp_div, aes(x = method,  y = un_spp, fill = factor(uptake))) +
+  geom_boxplot()
 
 
 # species-specific prevalence
