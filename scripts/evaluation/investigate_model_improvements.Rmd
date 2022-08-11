@@ -192,9 +192,9 @@ nobvs_pl <- et %>%
   filter(method!='initial') %>% 
   na.omit
 
-# nobvs_pl <- nobvs_pl %>% 
-#   group_by(uptake, method) %>% 
-#   mutate(nobvs_cat = dplyr::ntile(new_obvs, 10))
+nobvs_pl <- nobvs_pl %>%
+  group_by(uptake, method) %>%
+  mutate(nobvs_cat = dplyr::ntile(new_obvs, 10))
 
 ```
 
@@ -241,7 +241,7 @@ ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = factor(up
 
 ```
 
-Going to split it up by a 10-level categorical number of new observations. The number First let's check how many data points per category.
+Going to split it up by a 10-level categorical number of new observations. The number of data points is the same in each box for each combination of method x uptake amount. But differ between different method x uptake combinations. First let's check how many data points per category.
 
 ```{r plot_nobs_cat, include = T}
 
@@ -249,13 +249,15 @@ nobvs_pl %>%
   na.omit() %>% 
   group_by(nobvs_cat, uptake, method) %>% 
   tally() %>% 
+  filter(uptake != 0) %>% 
   ggplot(aes(nobvs_cat, n, label=n)) +
   geom_point() +
   ylab('Number data points') +
   xlab('Number new observations category') +
   geom_text(hjust=-0.2, vjust=0) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1)) +
+  facet_wrap(method~uptake)
 
 
 # nobvs_pl  %>% 
