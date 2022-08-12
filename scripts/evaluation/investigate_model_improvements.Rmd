@@ -128,24 +128,24 @@ asv4 <- read_csv('../../outputs/v4Community/asv4_v4all_observations.csv') %>%
 df <- rbind(asv1,asv2,asv3,asv4)
 
 # initial locations
-init <- df[df$method == 'initial',]
+init_nona <- df[which(df$method == 'initial'),]
 
 # all others
 meths <- df#[df$method != 'initial',]
 
 # remove initial locations - only looking at new locations
-new_locs <- meths[!meths$id %in% init$id,] ## id is lon lat id
+new_locs <- meths[!meths$id %in% init_nona$id,] ## id is lon lat id
 
 # initial locations for each species
 sp_init_locs <- init %>% 
-  na.omit() %>% 
+  # na.omit() %>% 
   group_by(method, community, species, prevalence, asv, uptake) %>% 
-  summarise(n = sum(Observed)) %>% 
+  summarise(n = sum(Observed, na.rm = T)) %>% 
   mutate(id = paste(community, species, prevalence, asv, uptake, sep = '_'))
 
 # new locations for each species
 sp_new_locs <- new_locs %>% 
-  na.omit() %>% 
+  # na.omit() %>% 
   group_by(method, community, species, prevalence, asv, uptake) %>% 
   summarise(n = sum(Observed)) %>% 
   mutate(id = paste(community, species, prevalence, asv, uptake, sep = '_'))
@@ -189,8 +189,8 @@ nobvs_pl <- et %>%
                                 ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
          perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
                                ifelse(perc_inc_mse>= p_c, -p_c, 0))) %>% 
-  filter(method!='initial') %>% 
-  na.omit
+  filter(method!='initial') #%>% 
+  # na.omit
 
 nobvs_pl <- nobvs_pl %>%
   group_by(uptake, method) %>%
@@ -219,6 +219,20 @@ ggplot(subset(nobvs_pl, uptake!=0), aes(x = prevalence, y = new_obvs)) +
 
 ```
 
+Investigating Zeros
+
+```{r}
+
+df %>% 
+  group_by(community,species,prevalence, uptake, method) %>% 
+  summarise(tot = sum(Observed, na.rm = T)) %>% 
+  ggplot(aes(x=prevalence, y = tot)) + 
+  geom_point() + 
+  facet_wrap(method~uptake)
+
+```
+
+
 Histograms of the number of species with different numbers of observations. These three plots are just three ways of presenting the same data, as I wasn't sure which was the best way to show it.
 
 ```{r hists_sightings}
@@ -234,9 +248,17 @@ ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = method)) 
   facet_wrap(~uptake) +
   theme_bw()
 
+ggplot(na.omit(subset(init_new_locs, uptake!=0)), aes(x = n, y = method, fill = method)) +
+  geom_density_ridges(stat = "binline", alpha = 0.5) +
+  facet_wrap(~uptake) +
+  theme_bw()
+
+
 ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = factor(uptake))) +
   geom_density_ridges(alpha = 0.5) +
   theme_bw()
+
+## NAs in plots because couldn't match method - needed to rerun code on jasmin
 
 
 ```

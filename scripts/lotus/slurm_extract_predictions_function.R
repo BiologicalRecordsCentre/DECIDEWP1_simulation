@@ -104,6 +104,24 @@ extract_predictions <- function(community_folder, community_version, AS_version,
         # true_prob_occ <- as.data.frame(raster::crop(community[[j]]$true_prob_occ, prediction), xy=T)
         # true_pa <- as.data.frame(raster::crop(community[[j]]$pres_abs, prediction), xy=T)
         
+        # find and store observations from each method
+        if(k == 'initial'){
+          observations <- cbind(community = community_name,
+                                method = k,
+                                species = species_list[j], 
+                                prevalence = community[[j]]$prevalence,
+                                community[[j]]$observations)
+        } else {
+          # read in community file after AS for all AS methods
+          as_comm <- readRDS(grep(AS_version, list.files(community_folder, pattern = k, full.names = T), value = T))
+          observations <- cbind(community = community_name,
+                                method = k,
+                                species = species_list[j], 
+                                prevalence = community[[j]]$prevalence,
+                                as_comm[[j]]$observations)
+        }
+        
+        method_obsvs <- rbind(method_obsvs, observations)
         method_mod_av <- rbind(method_mod_av, mod_average_pres_unc)
         
       } else { # this is to store information about which species and methods had 0 observations 
@@ -134,7 +152,7 @@ extract_predictions <- function(community_folder, community_version, AS_version,
     dir.create(file.path(community_folder,'preds_and_obsvs'))
     
     # save model averages
-    write_csv(method_mod_av, file = paste0(community_folder, 'preds_and_obsvs/', species, '_', AS_version, '_', community_name, "_model_averages.csv"))
+    if(extract_preds) write_csv(method_mod_av, file = paste0(community_folder, 'preds_and_obsvs/', species, '_', AS_version, '_', community_name, "_model_averages.csv"))
     
     # save observations file
     write_csv(method_obsvs, file = paste0(community_folder, 'preds_and_obsvs/', species, '_', AS_version, '_', community_name, "_observations.csv"))

@@ -6,7 +6,7 @@ library(rslurm)
 community_version = 'v4'
 
 # name of the adaptive sampling version we are looking to evaluate
-AS_version = 'asv4'
+AS_version = 'asv1'
 
 # the name of the simulation run - same as slurm_simulate species
 simulation_run_name = 'communities_1km'
@@ -38,11 +38,12 @@ sdm_slurm <- slurm_apply(extract_predictions,
                          jobname = paste('predictions_community', community_version, AS_version, collapse = '_'),
                          nodes = length(pars$community_folder),
                          cpus_per_node = 1,
-                         slurm_options = list(partition = 'short-serial',
-                                              time = '23:59:59',
+                         slurm_options = list(partition = "short-serial-4hr", # 'short-serial',
+                                              time = '3:59:59',
                                               mem = 3000,
                                               output = "sim_eval_%a.out",
-                                              error = "sim_eval_%a.err"),
+                                              error = "sim_eval_%a.err",
+                                              account = 'short4hr'),
                          sh_template = "jasmin_submit_sh.txt",
                          submit = T)
 

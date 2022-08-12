@@ -3,7 +3,7 @@
 library(tidyverse)
 
 ## to be run on jasmin
-for(i in 1:4){
+for(i in 2:4){
   method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
   
   AS_version = paste0('asv',i)
