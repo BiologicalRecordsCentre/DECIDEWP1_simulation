@@ -20,7 +20,8 @@ pars <- data.frame(community_folder = paste0(dirs$outpath, community_version, si
                    model = "rf, gam, lr", 
                    method = "initial, none, uncertainty, prevalence, unc_plus_prev, unc_plus_recs, coverage",
                    community_version = community_version,
-                   AS_version = AS_version)
+                   AS_version = AS_version,
+                   extract_preds = FALSE)
 
 source('scripts/slurm_extract_predictions_function.R')
 

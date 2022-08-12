@@ -1,9 +1,9 @@
 # extract predictions and observations function
-extract_predictions <- function(community_folder, community_version, AS_version, model, method){
+extract_predictions <- function(community_folder, community_version, AS_version, model, method, extract_preds){
   
   require(raster)
   require(readr)
-
+  
   #read in all model files for each species
   
   model_types <- sapply(strsplit(as.character(model),","), function(x) trimws(x))
@@ -67,7 +67,7 @@ extract_predictions <- function(community_folder, community_version, AS_version,
         models_to_read <- grep(paste0(species, "_", k, ".rdata"), models)
       } else {models_to_read <- grep(paste0(species, "_initial_AS_", k, ".rdata"), models)}
       
-      if(length(models_to_read) > 0){
+      if(length(models_to_read) > 0 & extract_preds){
         idx <- 1
         model_outputs <- list()
         for (l in models_to_read){
@@ -99,10 +99,14 @@ extract_predictions <- function(community_folder, community_version, AS_version,
                                       mod_average_pres_unc)
         
         
-        # true occurence
-        prediction <- raster::rasterFromXYZ(mod_average_pres_unc[,c('x', 'y', 'mean')])
-        true_prob_occ <- as.data.frame(raster::crop(community[[j]]$true_prob_occ, prediction), xy=T)
-        true_pa <- as.data.frame(raster::crop(community[[j]]$pres_abs, prediction), xy=T)
+        # # true occurence
+        # prediction <- raster::rasterFromXYZ(mod_average_pres_unc[,c('x', 'y', 'mean')])
+        # true_prob_occ <- as.data.frame(raster::crop(community[[j]]$true_prob_occ, prediction), xy=T)
+        # true_pa <- as.data.frame(raster::crop(community[[j]]$pres_abs, prediction), xy=T)
+        
+        method_mod_av <- rbind(method_mod_av, mod_average_pres_unc)
+        
+      } else { # this is to store information about which species and methods had 0 observations 
         
         # find and store observations from each method
         if(k == 'initial'){
@@ -120,8 +124,9 @@ extract_predictions <- function(community_folder, community_version, AS_version,
                                 prevalence = community[[j]]$prevalence,
                                 as_comm[[j]]$observations)
         }
-        method_mod_av <- rbind(method_mod_av, mod_average_pres_unc)
+        
         method_obsvs <- rbind(method_obsvs, observations)
+        
       }
       
     }#method loop
@@ -133,7 +138,7 @@ extract_predictions <- function(community_folder, community_version, AS_version,
     
     # save observations file
     write_csv(method_obsvs, file = paste0(community_folder, 'preds_and_obsvs/', species, '_', AS_version, '_', community_name, "_observations.csv"))
-
+    
     
   }#species loop
   
