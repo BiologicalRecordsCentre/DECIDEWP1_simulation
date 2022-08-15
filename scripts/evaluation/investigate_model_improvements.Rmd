@@ -137,7 +137,7 @@ meths <- df#[df$method != 'initial',]
 new_locs <- meths[!meths$id %in% init_nona$id,] ## id is lon lat id
 
 # initial locations for each species
-sp_init_locs <- init %>% 
+sp_init_locs <- init_nona %>% 
   # na.omit() %>% 
   group_by(method, community, species, prevalence, asv, uptake) %>% 
   summarise(n = sum(Observed, na.rm = T)) %>% 
@@ -190,7 +190,7 @@ nobvs_pl <- et %>%
          perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
                                ifelse(perc_inc_mse>= p_c, -p_c, 0))) %>% 
   filter(method!='initial') #%>% 
-  # na.omit
+# na.omit
 
 nobvs_pl <- nobvs_pl %>%
   group_by(uptake, method) %>%
@@ -216,6 +216,11 @@ ggplot(subset(nobvs_pl, uptake!=0), aes(x = prevalence, y = new_obvs)) +
   facet_wrap(uptake~method, ncol = 6) +
   theme_bw()
 
+ggplot(subset(nobvs_pl, uptake!=0), aes(x = new_obvs)) +
+  geom_histogram() +
+  xlab('Number new observations') +
+  facet_wrap(uptake~method, ncol = 6) +
+  theme_bw()
 
 ```
 
@@ -229,6 +234,8 @@ df %>%
   ggplot(aes(x=prevalence, y = tot)) + 
   geom_point() + 
   facet_wrap(method~uptake)
+
+
 
 ```
 
@@ -248,10 +255,15 @@ ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = method)) 
   facet_wrap(~uptake) +
   theme_bw()
 
-ggplot(na.omit(subset(init_new_locs, uptake!=0)), aes(x = n, y = method, fill = method)) +
+ggplot(na.omit(subset(init_new_locs, uptake!=0)), aes(x = n, y = method, fill = method, colour = method)) +
   geom_density_ridges(stat = "binline", alpha = 0.5) +
   facet_wrap(~uptake) +
-  theme_bw()
+  theme_bw() +
+  xlab('Number of observations') +
+  ylab('Method') +
+  theme(text = element_text(size = 15)) +
+  scale_fill_viridis_d(option = 'turbo', name = 'Method') +
+  scale_colour_viridis_d(option = 'turbo', name = 'Method')
 
 
 ggplot(subset(init_new_locs, uptake!=0), aes(x = n, y = method, fill = factor(uptake))) +
@@ -309,6 +321,8 @@ ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')),
   scale_fill_discrete(name = 'AUC') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
 
 
@@ -318,6 +332,8 @@ ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')),
   scale_fill_discrete(name = 'MSE') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
 
 
@@ -327,6 +343,8 @@ ggplot(na.omit(subset(nobvs_pl, uptake != 0 & method != 'initial')),
   scale_fill_discrete(name = 'Correlation') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
 
 ```
@@ -340,12 +358,12 @@ First, look at the number of data points per group.
 ```{r calc_perc_change}
 
 etp <- et %>% 
-  group_by(method, uptake) %>% 
+  # group_by(method, uptake) %>% 
   mutate(prev_cat = dplyr::ntile(prevalence, 10),
          auc_cat = dplyr::ntile(init_auc, 10),
          mse_cat = dplyr::ntile(init_mse, 10),
          corr_cat = dplyr::ntile(init_corr, 10)) %>% 
-  ungroup() %>% 
+  # ungroup() %>% 
   # rowwise() %>% 
   mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
          perc_inc_corr = (delta_corr)/(init_corr)*100,
@@ -374,7 +392,8 @@ etp %>%
   xlab('Prevalence category') +
   geom_text(hjust=-0.2, vjust=0) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1)) +
+  facet_wrap(method~uptake)
 
 etp %>% 
   na.omit() %>% 
@@ -386,7 +405,8 @@ etp %>%
   xlab('AUC category') +
   geom_text(hjust=-0.2, vjust=0) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1)) +
+  facet_wrap(method~uptake)
 
 etp %>% 
   na.omit() %>% 
@@ -398,7 +418,8 @@ etp %>%
   xlab('MSE category') +
   geom_text(hjust=-0.2, vjust=0) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1, vjust=1)) +
+  facet_wrap(method~uptake)
 
 etp %>% 
   na.omit() %>% 
@@ -423,27 +444,39 @@ Prevalence vs proportion of models that changed by >=`r p_c`%. -`r p_c` = worsen
 ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
        aes(x = prev_cat, fill = factor(perc_imp_auc))) +
   geom_bar(position="fill") +
-  scale_fill_discrete(name = 'AUC') +
+  scale_fill_discrete(name = 'Percentage change\nin AUC') +
+  ylab('Proportion of models') +
+  xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
 
 
 ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
        aes(x = prev_cat, fill = factor(perc_imp_mse))) +
   geom_bar(position="fill") +
-  scale_fill_discrete(name = 'MSE') +
+  ylab('Proportion of models') +
+  xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
-  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
+        text = element_text(size = 15))
 
 
 ggplot(na.omit(subset(etp, uptake != 0 & method != 'initial')), 
        aes(x = prev_cat, fill = factor(perc_imp_corr))) +
   geom_bar(position="fill") +
-  scale_fill_discrete(name = 'Correlation') +
+  scale_fill_discrete(name = 'Percentage change\nin Correlation') +
+  ylab('Proportion of models') +
+  xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_wrap(uptake~method, ncol = 6) +
+  scale_fill_grey(name = 'Percentage change\nin MSE') +
+  theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1))
 
 
@@ -583,7 +616,7 @@ For this final plot, the top row shows community level change in performance plo
 ## community results
 cpl_comm <- ggplot(comm_df_l, aes(x=method, y = value, fill = factor(uptake))) +
   geom_boxplot() +
-  scale_fill_discrete(name = "Proportion uptake") +
+  scale_fill_discrete(name = "Uptake") +
   facet_wrap(~name) +
   theme_bw() +
   ylab('Change in model performance\n(new - initial)') +
@@ -592,9 +625,9 @@ cpl_comm <- ggplot(comm_df_l, aes(x=method, y = value, fill = factor(uptake))) +
 
 ## number model plots
 nmods_pl <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial'), 
-       aes(x = method, y = value, fill = factor(uptake))) +
+                   aes(x = method, y = value, fill = factor(uptake))) +
   geom_boxplot() +
-  scale_fill_discrete(name = "Proportion uptake") +
+  scale_fill_discrete(name = "Uptake") +
   facet_wrap(~eval_type,ncol = 3) +
   ylab('Number of models\n>1% improvement') +
   xlab('') +
@@ -605,4 +638,94 @@ nmods_pl <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'in
 cpl_comm/nmods_pl + plot_layout(guides = 'collect')
 
 ```
+
+
+```{r comm_plots_mse_auc_corr, echo = FALSE}
+
+cno1 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>% 
+                 mutate(facet = 'MSE'), 
+               aes(x=method, y = delta_mse, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.0075, 0.005) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('Delta MSE (lower = better)') +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_discrete(name = 'Uptake') +
+  facet_wrap(~facet)
+
+
+cno2 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>% 
+                 mutate(facet = 'AUC'), 
+               aes(x=method, y = delta_auc, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.005, 0.009) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('Delta AUC (higher = better)') +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_discrete(name = 'Uptake') +
+  facet_wrap(~facet)
+
+
+cno3 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>% 
+                 mutate(facet = 'Correlation'), 
+               aes(x=method, y = delta_corr, fill = factor(uptake))) +
+  geom_boxplot() +
+  theme_classic() + 
+  ylim(-0.01, 0.015) +
+  geom_hline(yintercept = 0, linetype = 'dashed') +
+  xlab('') + ylab('Delta corr. (higher = better)') +
+  theme(axis.text.x = element_blank()) +
+  scale_fill_discrete(name = 'Uptake') +
+  facet_wrap(~facet)
+
+comb_plot_comm_no <- cno1+cno2+cno3 + plot_layout(guides = 'collect')
+comb_plot_comm_no
+
+```
+
+
+```{r n_mods_pl}
+
+
+msen <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'mse'), 
+               aes(x = method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "Uptake") +
+  # facet_wrap(~eval_type,ncol = 3) +
+  ylab('Number of models\n>1% improvement') +
+  xlab('') +
+  # ggtitle('Number of models with 1% improvement for different uptake values') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15)) 
+
+aucn <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'auc'), 
+               aes(x = method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "Uptake") +
+  # facet_wrap(~eval_type,ncol = 3) +
+  ylab('Number of models\n>1% improvement') +
+  xlab('') +
+  # ggtitle('Number of models with 1% improvement for different uptake values') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15))
+
+corrn <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'corr'), 
+                aes(x = method, y = value, fill = factor(uptake))) +
+  geom_boxplot() +
+  scale_fill_discrete(name = "Uptake") +
+  # facet_wrap(~eval_type,ncol = 3) +
+  ylab('Number of models\n>1% improvement') +
+  xlab('') +
+  # ggtitle('Number of models with 1% improvement for different uptake values') +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15))
+
+nmods_c <- (cno1+cno2+cno3) / (msen + aucn + corrn) + plot_layout(guides = 'collect')  +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10))
+nmods_c 
+
+```
+
 
