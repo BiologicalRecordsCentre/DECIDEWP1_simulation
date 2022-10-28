@@ -790,3 +790,9 @@ nmods_c
 ```
 
 
+```{r mse_only, fig.width=5, fig.height = 6}
+
+cno1 / msen + plot_layout(guides = 'collect')
+
+```
+

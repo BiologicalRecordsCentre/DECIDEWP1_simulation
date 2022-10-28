@@ -158,13 +158,31 @@ new_locs <- meths[!meths$id %in% init$id,]
 ## some summaries
 loc_summ <- new_locs %>% 
   na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
   group_by(method, community, species, prevalence, uptake) %>% 
-  summarise(n = sum(Observed)) %>% # number of observations of each species for all methods in each community
+  summarise(n = sum(Observed), # number of observations of each species for all methods in each community
+            n_sites = length(unique(locid))) %>% 
   group_by(method, community, uptake) %>% # work out some community-level summaries
   summarise(total_obs = sum(n),
+            av_obs = sum(n)/n_sites,
             diversity = length(unique(species)), # n unique species
             prev = median(prevalence)) # median prevalence
 
+n_spp <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(community, uptake, method) %>% 
+  mutate(n_unique_locs = length(unique(locid))) %>% 
+  group_by(method, uptake, community) %>% 
+  summarise(n_species = length(species),
+            av_spp_vis = n_species/n_unique_locs)
+
+
+b <- new_locs %>% 
+  group_by(method, uptake, community, id) %>% 
+  summarise(nspp = length(unique(species)))
+
+hist(b$nspp)
 
 ## plots
 s1 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=total_obs, fill = factor(uptake))) +
@@ -172,6 +190,12 @@ s1 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=total_obs, fill
   ylab('Total observations') +
   theme_classic() +
   scale_fill_discrete(name = 'Uptake')
+s1.5 <- ggplot(data = subset(b, uptake!=0), aes(x=method, y=nspp, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Species per visit') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake')
+s1.5
 s2 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=diversity, fill = factor(uptake))) +
   geom_boxplot() +
   ylab('Unique species') +
@@ -183,7 +207,7 @@ s3 <- ggplot(data = subset(loc_summ, uptake!=0), aes(x=method, y=prev, fill = fa
   theme_classic() +
   scale_fill_discrete(name = 'Uptake')
 
-s1/s2/s3 +
+s1/s1.5/s2/s3 +
   plot_annotation(tag_levels = 'a')
 
 
