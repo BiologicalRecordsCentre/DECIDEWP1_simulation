@@ -1,10 +1,11 @@
 
 
 library(tidyverse)
+library(viridis)
 library(ggridges)
 library(patchwork)
 
-write = FALSE
+write = TRUE
 
 
 ## set percentage change
@@ -88,7 +89,7 @@ p_c <- 5
            delta_max_sd = max_sd - init_max_sd,
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
-                                    "unc_plus_prev", "unc_plus_recs", "uncertainty")))
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
   
   
   ## load all the observations for a given AS version
@@ -155,8 +156,8 @@ p_c <- 5
            perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
                                  ifelse(perc_inc_mse>= p_c, -p_c, 0)),
            method = factor(method, 
-                           levels=c("initial", "none", "coverage", "prevalence",  
-                                    "unc_plus_prev", "unc_plus_recs", "uncertainty")))
+                           levels=c("initial", "none", "coverage", "prevalence", 
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
   
   # number of models with > x% increase
   nmods <- etp %>%
@@ -178,8 +179,220 @@ p_c <- 5
                                      ifelse(grepl(x = name, pattern = 'corr'), 'corr', 'WRONG'))),
            inc_amount = as.numeric(gsub("[^\\d]+", "", name, perl=TRUE)),
            method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence", 
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
+  
+  # data for alternate figure 4
+  
+  etp2 <- et %>% 
+    # group_by(method, uptake) %>% 
+    mutate(prev_cat = dplyr::ntile(prevalence, 10),
+           auc_cat = dplyr::ntile(init_auc, 10),
+           mse_cat = dplyr::ntile(init_mse, 10),
+           corr_cat = dplyr::ntile(init_corr, 10)) %>% 
+    # ungroup() %>% 
+    # rowwise() %>% 
+    mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
+           perc_inc_corr = (delta_corr)/(init_corr)*100,
+           perc_inc_mse = (delta_mse)/(init_mse)*100,
+           perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
+                                 ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
+           perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
+                                  ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
+           perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
+                                 ifelse(perc_inc_mse>= p_c, -p_c, 
+                                        ifelse(perc_inc_mse>= -p_c & perc_inc_mse< 0, -2.5,
+                                               ifelse(perc_inc_mse<= p_c & perc_inc_mse> 0, 2.5, 0)))),
+           method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
-                                    "unc_plus_prev", "unc_plus_recs", "uncertainty")))
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
+  
+  etp_p2 <- subset(etp2, method != 'initial')
+  levels(etp_p2$method) <- unlist(meth_names)
+  
+  # load the probability sampling layers
+  {
+    
+    source('scripts/functions/filter_distance.R')
+    
+    ### exploring cell weights
+    fls <- list.files('outputs/comm4_asv1_investigating/', 
+                      pattern = 'cellweights', full.names = T)
+    
+    fls_names <- list.files('outputs/comm4_asv1_investigating/', 
+                            pattern = 'cellweights')
+    
+    cell_weights <- data.frame()
+    
+    for(x in 1:length(fls)) {
+      
+      cw <- read.csv(fls[x])
+      
+      cw$method <- gsub("_asv1_v4community_1_50_sim_initial_cellweights.csv",
+                        '',
+                        fls_names[x])
+      
+      if(any(cw$method=='coverage')) cw$cell_weights <- cw$butterfly_1km_effort
+      
+      cw2 <- cw %>% 
+        dplyr::select(x, y, cell_weights, method)
+      
+      cell_weights <- rbind(cell_weights, cw2)
+      
+    }
+    
+    method_unique <- unique(cell_weights$method)
+    
+    cwt_rast <- list()
+    for(md in seq_along(method_unique)) {
+      
+      cell_wt_method <- cell_weights[cell_weights$method == method_unique[md],1:3]
+      cwt_rast[[md]] <- raster::rasterFromXYZ(cell_wt_method)
+      
+    }
+    
+    cwt_rast[[1]] <- raster::crop(cwt_rast[[1]], cwt_rast[[2]])  
+    
+    all_comb <- raster::stack(cwt_rast)
+    names(all_comb) <- method_unique  
+    
+    crp_rst <- filter_distance(all_comb,
+                               location = c(-2.2, 53.8),
+                               distance = 20000)
+    
+    as_layers <- as.data.frame(crp_rst, xy = TRUE) %>% 
+      pivot_longer(cols = 3:8)
+    
+    }
+  
+  ## load the observations 
+  {
+    
+    #################################################
+    ###  Compare different AS versions (uptakes)  ###
+    #################################################
+    
+    ## community 2 as well as 1!
+    
+    ## What about new locations - do they make sense?
+    method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage")
+    
+    method_locs <- data.frame()
+    
+    for(com in 1) { # community
+      
+      for(a in 1){ # adaptive sampling version
+        
+        for(m in seq_along(method)) {
+          print(m)
+          
+          cov <- readRDS(paste0('outputs/comm4_asv1_investigating/asv',a,'_v4community_', com, '_50_sim_initial_AS_', method[m], '.rds'))
+          
+          obvs <- data.frame()
+          
+          for(i in 1:length(cov)) {
+            obvs <- rbind(obvs, cbind(cov[[i]]$observations[,1:2], species = paste0('Sp',i))) 
+          }
+          
+          obvs$id <- paste(obvs$lon, obvs$lat)
+          obvs$method <- method[m]
+          obvs$asv <- a
+          obvs$community <- com
+          
+          method_locs <- rbind(method_locs,obvs)
+          
+        }
+      }
+      
+    }
+    
+    head(method_locs)
+    
+    
+    # get initial observations for each species
+    
+    ## community 1
+    obvsinit <- readRDS('outputs/comm4_asv1_investigating/v4community_1_50_sim_initial.rds')
+    
+    init_obvs <- data.frame()
+    for(i in 1:length(obvsinit)) {
+      init_obvs <- rbind(init_obvs, cbind(obvsinit[[i]]$observations[,1:2], species = paste0('Sp',i))) 
+    }
+    
+    obvsinit <- init_obvs %>% 
+      dplyr::select(!species) %>% 
+      distinct() %>% 
+      mutate(id = paste(lon, lat),
+             method = 'initial',
+             asv = 'init', 
+             community = 1)
+    head(obvsinit)
+    
+    meth_locsC1 <- subset(method_locs, community == 1)
+    
+    # find the new locs that weren't the initial locs
+    mlocsC1 <- meth_locsC1[!meth_locsC1$id %in% obvsinit$id,] %>% 
+      dplyr::select(!species) %>% 
+      distinct()
+    
+    # comine original and new locs
+    mlocs_all <- rbind(mlocsC1, obvsinit)
+    
+    mlocs_all_sub <- mlocs_all[!is.na(raster::extract(crp_rst[[2]], mlocs_all[,c(1,2)])), ]
+    
+  }
+  
+  # environmental data
+  env_data <- raster::stack('data/environmental_data/envdata_1km_no_corr_noNA.grd')[[22:24]]
+  
+  library(sf)
+  library(stars)
+  library(rnaturalearth)
+  
+  # get world map
+  world <- ne_countries(scale = "medium", type = 'map_units', returnclass = "sf")
+  class(world)
+  
+  # get czech map
+  uk <- world[world$admin == 'United Kingdom',]
+  gb <- uk[uk$name != 'N. Ireland',] %>% 
+    st_transform(crs = 27700)
+  
+  # get community data
+  c4 <- readRDS('outputs/v4Community/v4community_1_50_sim_initial.rds')
+  c4cov <- readRDS('outputs/comm4_asv1_investigating/asv1_v4community_1_50_sim_initial_AS_uncertainty.rds')
+  load('outputs/comm4_asv1_investigating/asv1_v4lr_SDMs_GBnew_Sp5_initial_AS_uncertainty.rdata')
+  
+  
+  
+  ## determine differences in observations/characteristics per community/uptake
+  loc_summ <- new_locs %>% 
+    na.omit() %>% 
+    mutate(locid = paste(lon, lat, sep = '_')) %>% 
+    group_by(method, community, uptake) %>% # work out some community-level summaries
+    summarise(total_obs = sum(Observed),
+              unique_locs = length(unique(locid)),
+              av_obs_per_loc = sum(Observed)/unique_locs, # number of observations per location
+              diversity = length(unique(species)), # n unique species
+              av_div_per_loc = length(unique(species))/unique_locs) %>% # n unique species per location
+  mutate(method = factor(method, 
+                levels=c("initial", "none", "coverage", "prevalence",  
+                         "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
+  
+  # calculate prevalence for each community/method/uptake
+  prev_df <- new_locs[, c('method', 'community', 'uptake', 'species', 'prevalence')]
+  prev_df_unique <- prev_df[!duplicated(prev_df),]
+  prev_df_unique <- prev_df_unique %>% 
+    na.omit() %>% 
+    group_by(method, community, uptake) %>% 
+    summarise(med_prev = median(prevalence)) %>% 
+    mutate(method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence",  
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
   
 }
 
@@ -187,25 +400,184 @@ p_c <- 5
 
 ## plotting -----
 
+## figure 2 - plots for the AS methodological figure
+head(as_layers)
+as_method <- method[2:5]
 
-## figure 1 - model improvements + N models > %
+for(md in 1:length(as_method)) {
+  
+  print(as_method[md])
+  
+  p <- ggplot(subset(as_layers, name == as_method[md]), 
+              aes(x,y,fill = log(value))) +
+    geom_raster()+
+    scale_fill_viridis(na.value="transparent") +
+    theme_void() +
+    theme(legend.position = 'none') 
+  print(p)
+  if(write){
+    ggsave(p, filename = paste0('outputs/plots/paper/figure2_ASmethodplot_', as_method[md], '.png'),
+           bg = 'transparent', width = 2.2, height = 2.2)
+  }
+}
+
+for(m in method[c(1,6)]){
+  p_nas <- ggplot() +
+    geom_raster(data = subset(as_layers, name == 'coverage'), aes(x,y,fill = log(value))) +
+    geom_point(data = subset(mlocs_all_sub, method == 'initial'), aes(lon,lat), colour = 'black') +
+    geom_point(data = subset(mlocs_all_sub, method == m), aes(lon,lat), colour = 'red') +
+    # scale_colour_manual(values = c('black', 'red')) +
+    scale_fill_viridis(na.value = 'transparent') +
+    theme_void() +
+    theme(legend.position = 'none')
+  # print(p_nas)
+  
+  if(write){
+    ggsave(p_nas, filename = paste0('outputs/plots/paper/figure2_ASmethodplot_', m, '.png'),
+           bg = 'transparent', width = 2.2, height = 2.2)
+  }
+}
+
+
+## figure 1 - plots for the AS methodological figure
+## plot of observation data
+# sample to mimic only a few species
+uncert <- all_comb[['uncertainty']] %>% 
+  as.data.frame(xy = TRUE) %>% 
+  mutate(uncert = ifelse(is.na(uncertainty), NA, 1))
+
+initobs <- subset(mlocs_all, asv == 'init')
+
+out_obs <- data.frame()
+for(n in c(200, 600, 1000)) {
+  samp_obvs_ind <- sample(1:nrow(initobs), size = n)
+  
+  out_obs <- rbind(out_obs, cbind(initobs[samp_obvs_ind,], species = paste0('sp',n)))
+}
+
+p_obs <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 5) +
+  scale_fill_manual(na.value = 'transparent') +
+  geom_point(data = out_obs, aes(lon, lat, colour = species), size = 1) +
+  scale_colour_manual(values = c("#E69F00", "#009E73", "#D55E00")) +
+  theme_void() +
+  theme(legend.position = 'none')
+p_obs
+
+if(write){
+  ggsave(p_obs, filename = paste0('outputs/plots/paper/figure1_simmethodplot_sp_obs.png'),
+         bg = 'transparent', width = 4.46, height = 7)
+}
+
+## environmental data
+edf <- as.data.frame(env_data, xy = TRUE)
+head(edf)
+
+
+ed1 <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 4) +
+  geom_tile(data = edf, aes(x,y, fill = AnnualTemp)) +
+  scale_fill_continuous(na.value = 'transparent') +
+  theme_void() +
+  theme(legend.position = 'none')
+
+ed2 <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 4) +
+  geom_tile(data = edf, aes(x,y, fill = MeanDiRange)) +
+  scale_fill_viridis(na.value = 'transparent') +
+  theme_void() +
+  theme(legend.position = 'none')
+
+ed3 <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 4) +
+  geom_tile(data = edf, aes(x,y, fill = Isotherm)) +
+  scale_fill_viridis(na.value = 'transparent', option = 'C') +
+  theme_void() +
+  theme(legend.position = 'none')
+
+if(write) {  
+  ggsave(ed1, filename = paste0('outputs/plots/paper/figure1_simmethodplot_antemp.png'),
+         bg = 'transparent', width = 4.46, height = 7)  
+  ggsave(ed2, filename = paste0('outputs/plots/paper/figure1_simmethodplot_mnditemp.png'),
+         bg = 'transparent', width = 4.46, height = 7)  
+  ggsave(ed3, filename = paste0('outputs/plots/paper/figure1_simmethodplot_isotherm.png'),
+         bg = 'transparent', width = 4.46, height = 7)
+  
+}
+
+
+## true prob of occurrence 
+c4sp3 <- c4[[5]]$pres_abs %>% 
+  as.data.frame(xy=TRUE)
+c4covsp3 <- c4cov[[5]]$pres_abs %>% 
+  as.data.frame(xy=TRUE)
+
+
+true_sp <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 5) +
+  geom_raster(data = c4sp3, aes(x,y,fill = layer)) +
+  scale_fill_manual(na.value = 'transparent', values = c('grey', 'green')) +
+  theme_void() +
+  theme(legend.position = 'none')
+
+pred_sp1 <- model_output$predictions
+load('outputs/comm4_asv1_investigating/asv1_v4lr_SDMs_GBnew_Sp50_initial_AS_uncertainty.rdata')
+pred_sp2 <- model_output$predictions
+
+
+pred_sp_pl <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 4) +
+  geom_raster(data = pred_sp1, aes(x,y,fill = mean)) +
+  scale_fill_viridis(na.value = 'transparent') +
+  theme_void() +
+  theme(legend.position = 'none')
+pred_sp_pl
+
+
+pred_sp_pl2 <- ggplot() +
+  geom_sf(data = gb, fill = 'white', col = 'white', size = 4) +
+  geom_raster(data = pred_sp2, aes(x,y,fill = mean)) +
+  scale_fill_viridis(na.value = 'transparent') +
+  theme_void() +
+  theme(legend.position = 'none')
+pred_sp_pl2
+
+
+if(write) {  
+  ggsave(true_sp, filename = paste0('outputs/plots/paper/figure1_simmethodplot_truepres.png'),
+         bg = 'transparent', width = 4.46, height = 7)  
+  
+  ggsave(pred_sp_pl, filename = paste0('outputs/plots/paper/figure1_simmethodplot_predpres_sp1.png'),
+         bg = 'transparent', width = 4.46, height = 7)  
+  
+  ggsave(pred_sp_pl2, filename = paste0('outputs/plots/paper/figure1_simmethodplot_predpres_sp2.png'),
+         bg = 'transparent', width = 4.46, height = 7)  
+  
+  
+}
+
+## figure 3 - model improvements + N models > %
+
+sd(comm_df$delta_mse)  
+hist(comm_df$delta_mse)
+
 
 cno1 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>% 
                  mutate(facet = 'MSE'), 
                aes(x=method, y = delta_mse, fill = factor(uptake))) +
   geom_boxplot() +
   theme_bw() + 
-  ylim(-0.008, 0.005) +
+  ylim(-(2*sd(comm_df$delta_mse)), 2*sd(comm_df$delta_mse)) +
   geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') +
   ylab('Delta MSE (lower = better)') +
-  # theme(axis.text.x = element_blank()) +
-  scale_fill_discrete(name = 'Uptake') +
+  scale_fill_discrete(name = 'Uptake (%)', labels = c(1, 10, 50)) +
   # facet_wrap(~facet) +
-  scale_x_discrete(labels= c('Business\nas usual', 'Gap-filling', 'Rare species',
-                             'Uncertainty of rare\nspecies', 'New areas\nand uncertainty',
-                             'Uncertainty only')) +
-  theme(text = element_text(size = 12))
+  scale_x_discrete(labels= c('Business \n as usual', 'Gap-filling', 'Rare species',
+                             'Uncertainty only', 'Uncertainty of \n rare species', 
+                             'Gap-filling \n with uncertainty')) +
+  theme(text = element_text(size = 12),
+        axis.text.x = element_blank()) #element_text(size = 12, angle = 0, vjust = 0))
 
 cno1
 
@@ -213,32 +585,33 @@ cno1
 msen <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'mse'), 
                aes(x = method, y = value, fill = factor(uptake))) +
   geom_boxplot() +
-  scale_fill_discrete(name = "Uptake") +
+  scale_fill_discrete(name = "Uptake (%)", labels = c(1, 10, 50)) +
   # facet_wrap(~eval_type,ncol = 3) +
   ylab('Number of models with\n>1% improvement') +
   xlab('') +
   # ggtitle('Number of models with 1% improvement for different uptake values') +
   theme_bw() +
   # theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10)) +
-  scale_x_discrete(labels= c('Business\nas usual', 'Gap-filling', 'Rare species',
-                             'Uncertainty of rare\nspecies', 'New areas\nand uncertainty',
-                             'Uncertainty only')) + 
+  scale_x_discrete(labels= c('Business \n as usual', 'Gap-filling', 'Rare species',
+                             'Uncertainty\nonly', 'Uncertainty of \n rare species', 
+                             'Gap-filling \n with uncertainty')) + 
   theme(text = element_text(size = 12),
-        axis.text.x = element_text(size = 12, angle = 25, vjust = 0.5))
+        axis.text.x = element_text(size = 12, angle = 0, vjust = 0))
 msen
 
 
-fig2 <- cno1 + msen + plot_layout(guides = 'collect') + plot_annotation(tag_levels = 'a')
-fig2
+fig3 <- cno1 / msen + plot_layout(guides = 'collect') + plot_annotation(tag_levels = 'a')
+fig3
 
 if(write){
-  ggsave(fig2, filename = 'outputs/plots/paper/figure2')
+  ggsave(fig3, filename = 'outputs/plots/paper/figure3_improve_uptake.png',
+         width = 9.5, height = 9.5)
 }
 
 
 
 
-## figure 3 -- proportion of models
+## figure 4 -- proportion of models with >x% changes
 
 # change labels
 meth_names <- list(
@@ -246,68 +619,123 @@ meth_names <- list(
   "Business\nas usual",
   "Gap-filling",
   "Rare species",
-  "Uncertainty of rare\nspecies",
-  "New areas\nand uncertainty",
-  "Uncertainty only"
+  "Uncertainty only",
+  "Uncertainty of\nrare species",
+  "Gap-filling\nwith uncertainty"
 )
 
 etp_p <- subset(etp, method != 'initial')
 levels(etp_p$method) <- unlist(meth_names)
 
 
-ggplot(na.omit(subset(etp_p, uptake == 0.1 & method != 'initial')), 
-       aes(x = prev_cat, fill = factor(perc_imp_mse))) +
+fig4 <- ggplot(na.omit(subset(etp_p, uptake == 0.1 & method != 'initial')), 
+               aes(x = prev_cat, fill = factor(perc_imp_mse))) +
   geom_bar(position="fill") +
   ylab('Proportion of models') +
   xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_grid(~method) +
-  scale_fill_manual(name = 'Change in MSE', labels = c('< -5%', '0%', '> 5%'),
+  scale_fill_manual(name = 'Change in MSE (%)', labels = c('< -5', '0', '> 5'),
                     values = c("#E69F00", "#56B4E9", "#009E73")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-        text = element_text(size = 10))
+        text = element_text(size = 12))
+fig4
 
-# ggsave()
-etp <- et %>% 
-  # group_by(method, uptake) %>% 
-  mutate(prev_cat = dplyr::ntile(prevalence, 10),
-         auc_cat = dplyr::ntile(init_auc, 10),
-         mse_cat = dplyr::ntile(init_mse, 10),
-         corr_cat = dplyr::ntile(init_corr, 10)) %>% 
-  # ungroup() %>% 
-  # rowwise() %>% 
-  mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
-         perc_inc_corr = (delta_corr)/(init_corr)*100,
-         perc_inc_mse = (delta_mse)/(init_mse)*100,
-         perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
-                               ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
-         perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
-                                ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
-         perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
-                               ifelse(perc_inc_mse>= p_c, -p_c, 
-                                      ifelse(perc_inc_mse>= -p_c & perc_inc_mse< -1, -2.5,
-                                             ifelse(perc_inc_mse<= p_c & perc_inc_mse> 1, 2.5, 0)))),
-         method = factor(method, 
-                         levels=c("initial", "none", "coverage", "prevalence",  
-                                  "unc_plus_prev", "unc_plus_recs", "uncertainty")))
-
-etp_p <- subset(etp, method != 'initial')
-levels(etp_p$method) <- unlist(meth_names)
+if(write){
+  ggsave(fig4, filename = 'outputs/plots/paper/figure4_propmods_0_5.png',
+         width = 7, height = 4)
+}
 
 
-ggplot(na.omit(subset(etp_p, uptake == 0.1 & method != 'initial')), 
-       aes(x = prev_cat, fill = factor(perc_imp_mse))) +
+## figure 4 alternate --- proportion of models with more groups of change
+
+
+
+fig4_s <- ggplot(na.omit(subset(etp_p2, uptake == 0.5 & method != 'initial')), 
+                 aes(x = prev_cat, fill = factor(perc_imp_mse))) +
   geom_bar(position="fill") +
   ylab('Proportion of models') +
   xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_grid(~method) +
-  scale_fill_manual(name = 'Change in MSE (%)', labels = c('< -5', '-5 to -1', 
-                                                       '-1 to 1', '1 to 5', '> 5'),
+  scale_fill_manual(name = 'Change in MSE (%)', 
+                    # labels = c('< -5', '-5 to -1', 
+                    #            '-1 to 1', '1 to 5', '> 5'),
+                    labels = c('< -5', '-5 to 0', 
+                               '0 to 5', '> 5'),
                     values = c("#E69F00", "#56B4E9", "#009E73",
-                               "#0072B2", "#D55E00")) +
+                               "#0072B2")) +#, "#D55E00")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-        text = element_text(size = 10))
+        text = element_text(size = 14))
+fig4_s
+
+if(write){
+  ggsave(fig4_s, filename = 'outputs/plots/paper/figure4_propmods_0_1_5.png',
+         width = 11, height = 5)
+}
+
+
+
+
+## figure 5 --- Exploring benefits of AS
+levels(loc_summ$method) <- unlist(meth_names)
+levels(prev_df_unique$method) <- unlist(meth_names)
+
+
+## plots
+# total number of observations per community
+s1 <- ggplot(data = subset(loc_summ, uptake==0.5), 
+             aes(x=method, y=total_obs)) +
+  geom_boxplot() +
+  ylab('Total observations\nper community') +
+  xlab('') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake') +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+# # 
+# s1.5 <- ggplot(data = subset(loc_summ, uptake==0.5), 
+# aes(x=method, y=av_obs_per_loc)) +
+#   geom_boxplot() +
+#   ylab('Species per visit') +
+#   theme_classic() +
+#   scale_fill_discrete(name = 'Uptake')
+# s1.5
+s2 <- ggplot(data = subset(loc_summ, uptake==0.5), 
+             aes(x=method, y=diversity)) +
+  geom_boxplot() +
+  ylab('Species diversity\nper community') +
+  xlab('') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake') +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+# s2.5 <- ggplot(data = subset(loc_summ, uptake==0.5), 
+# aes(x=method, y=av_div_per_loc)) +
+#   geom_boxplot() +
+#   ylab('Unique species per loc') +
+#   theme_classic() +
+#   scale_fill_discrete(name = 'Uptake')
+
+s3 <- ggplot(data = subset(prev_df_unique, uptake==0.5), 
+             aes(x=method, y=med_prev)) +
+  geom_boxplot() +
+  ylab('Median prevalence\nper community') +
+  xlab('') +
+  theme_classic() +
+  scale_fill_discrete(name = 'Uptake') +
+  theme(text = element_text(size = 12))
+
+fig5 <- s1/s2/s3 +
+  plot_annotation(tag_levels = 'a')
+fig5
+
+if(write){
+  ggsave(fig5, filename = 'outputs/plots/paper/figure5_benefits_as.png',
+         width = 7, height = 8)
+}
 
