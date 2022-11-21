@@ -14,6 +14,18 @@ p_c <- 5
 
 ## sort data out
 {
+  
+  # for changing labels
+  meth_names <- list(
+    "initial",
+    "Business\nas usual",
+    "Gap-filling",
+    "Rare species",
+    "Uncertainty only",
+    "Uncertainty of\nrare species",
+    "Gap-filling\nwith uncertainty"
+  )
+  
   ## load uptake values
   obvs_df <- read.csv('outputs/v4Community/v4n_new_obvs_perc_increase_1_50_spp50.csv', 
                       stringsAsFactors = FALSE)
@@ -265,7 +277,7 @@ p_c <- 5
     as_layers <- as.data.frame(crp_rst, xy = TRUE) %>% 
       pivot_longer(cols = 3:8)
     
-    }
+  }
   
   ## load the observations 
   {
@@ -376,10 +388,19 @@ p_c <- 5
               unique_locs = length(unique(locid)),
               av_obs_per_loc = sum(Observed)/unique_locs, # number of observations per location
               diversity = length(unique(species)), # n unique species
-              av_div_per_loc = length(unique(species))/unique_locs) %>% # n unique species per location
-  mutate(method = factor(method, 
-                levels=c("initial", "none", "coverage", "prevalence",  
-                         "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+              av_div_per_loc = sum(length(unique(species)))/unique_locs) %>% # n unique species per location
+    mutate(method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence",  
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
+  prev_per_loc <- new_locs %>% 
+    na.omit() %>% 
+    mutate(locid = paste(lon, lat, sep = '_')) %>% 
+    group_by(method, community, uptake, locid) %>% # work out median prevalence per location
+    summarise(prev_per_loc = median(prevalence)) %>% 
+    mutate(method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence",  
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
   
   
   # calculate prevalence for each community/method/uptake
@@ -392,6 +413,14 @@ p_c <- 5
     mutate(method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  
+  # rename methods
+  levels(loc_summ$method) <- unlist(meth_names)
+  levels(prev_df_unique$method) <- unlist(meth_names)
+  levels(prev_per_loc$method) <- unlist(meth_names)
+  
+  # # write out file to create 'recorder preferences' plots
+  # write.csv(loc_summ, file = 'outputs/plots/paper/recprefs_loc_summ.csv')
   
   
 }
@@ -613,16 +642,6 @@ if(write){
 
 ## figure 4 -- proportion of models with >x% changes
 
-# change labels
-meth_names <- list(
-  "initial",
-  "Business\nas usual",
-  "Gap-filling",
-  "Rare species",
-  "Uncertainty only",
-  "Uncertainty of\nrare species",
-  "Gap-filling\nwith uncertainty"
-)
 
 etp_p <- subset(etp, method != 'initial')
 levels(etp_p$method) <- unlist(meth_names)
@@ -680,9 +699,6 @@ if(write){
 
 
 ## figure 5 --- Exploring benefits of AS
-levels(loc_summ$method) <- unlist(meth_names)
-levels(prev_df_unique$method) <- unlist(meth_names)
-
 
 ## plots
 # total number of observations per community
@@ -692,34 +708,17 @@ s1 <- ggplot(data = subset(loc_summ, uptake==0.5),
   ylab('Total observations\nper community') +
   xlab('') +
   theme_classic() +
-  scale_fill_discrete(name = 'Uptake') +
   theme(axis.text.x = element_blank(),
         text = element_text(size = 12))
 
-# # 
-# s1.5 <- ggplot(data = subset(loc_summ, uptake==0.5), 
-# aes(x=method, y=av_obs_per_loc)) +
-#   geom_boxplot() +
-#   ylab('Species per visit') +
-#   theme_classic() +
-#   scale_fill_discrete(name = 'Uptake')
-# s1.5
 s2 <- ggplot(data = subset(loc_summ, uptake==0.5), 
              aes(x=method, y=diversity)) +
   geom_boxplot() +
   ylab('Species diversity\nper community') +
   xlab('') +
   theme_classic() +
-  scale_fill_discrete(name = 'Uptake') +
   theme(axis.text.x = element_blank(),
         text = element_text(size = 12))
-
-# s2.5 <- ggplot(data = subset(loc_summ, uptake==0.5), 
-# aes(x=method, y=av_div_per_loc)) +
-#   geom_boxplot() +
-#   ylab('Unique species per loc') +
-#   theme_classic() +
-#   scale_fill_discrete(name = 'Uptake')
 
 s3 <- ggplot(data = subset(prev_df_unique, uptake==0.5), 
              aes(x=method, y=med_prev)) +
@@ -727,7 +726,6 @@ s3 <- ggplot(data = subset(prev_df_unique, uptake==0.5),
   ylab('Median prevalence\nper community') +
   xlab('') +
   theme_classic() +
-  scale_fill_discrete(name = 'Uptake') +
   theme(text = element_text(size = 12))
 
 fig5 <- s1/s2/s3 +
@@ -739,3 +737,135 @@ if(write){
          width = 7, height = 8)
 }
 
+
+### plots per location ---
+
+# total observations per location
+s1.5 <- ggplot(data = subset(loc_summ, uptake==0.5),
+               aes(x=method, y=av_obs_per_loc)) +
+  geom_boxplot() +
+  ylab('Observations\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+
+# diverstiy per location
+s2.5 <- ggplot(data = subset(loc_summ, uptake==0.5),
+               aes(x=method, y=av_div_per_loc)) +
+  geom_boxplot() +
+  ylab('Unique species\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+
+# diverstiy per location
+s3.5 <- ggplot(data = subset(prev_per_loc, uptake==0.5),
+               aes(x=method, y=prev_per_loc)) +
+  geom_boxplot() +
+  ylab('Prevalence\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+
+
+s1.5 / s2.5 / s3.5
+
+
+# looking at number of things by grouping by location - not average!!
+tdf <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake, locid) %>% 
+  summarise(visit_numbers = length(locid),
+            obs_per_loc = sum(Observed), # number of observations per location
+            diversity = length(unique(species)),
+            prev_per_loc = median(prevalence)) %>% 
+  mutate(method = factor(method, 
+                         levels=c("initial", "none", "coverage", "prevalence",  
+                                  "uncertainty", "unc_plus_prev", "unc_plus_recs")),
+         same_obs_div = ifelse(obs_per_loc == diversity, 1, 0))
+
+
+levels(tdf$method) <- unlist(meth_names)
+
+
+# total observations per location
+s1.2 <- ggplot(data = subset(tdf, uptake==0.5),
+               aes(x=method, y=visit_numbers)) +
+  geom_boxplot() +
+  ylab('num observations\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+# total observations per location
+s1.5 <- ggplot(data = subset(tdf, uptake==0.5),
+               aes(x=method, y=obs_per_loc)) +
+  geom_boxplot() +
+  ylab('Total observations\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+
+# diverstiy per location
+s2.5 <- ggplot(data = subset(tdf, uptake==0.5),
+               aes(x=method, y=diversity)) +
+  geom_boxplot() +
+  ylab('Unique species\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+
+# diverstiy per location
+s3.5 <- ggplot(data = subset(tdf, uptake==0.5),
+               aes(x=method, y=prev_per_loc)) +
+  geom_boxplot() +
+  ylab('Prevalence\nper visit') +
+  xlab('') +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+
+
+s1.2 / s1.5 / s2.5 / s3.5
+
+
+ggplot(subset(tdf, uptake==0.5), aes(visit_numbers, diversity)) +
+  geom_point() + 
+  xlab('number of visits to a location') +
+  facet_wrap(~method)
+  
+
+
+# %>% ungroup() %>% 
+#   group_by(method, community, uptake) %>% # work out some community-level summaries
+#   mutate(total_obs = sum(Observed),
+#             unique_locs = length(unique(locid)),
+#             av_obs_per_loc = sum(Observed)/unique_locs, # number of observations per location
+#             diversity = length(unique(species)), # n unique species
+#             av_div_per_loc = length(unique(species))/unique_locs) %>% # n unique species per location
+#   mutate(method = factor(method, 
+#                          levels=c("initial", "none", "coverage", "prevalence",  
+#                                   "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+
+
+ggplot(tdf, aes(visit_numbers, diversity, col = method)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~uptake)
+
+new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake, locid) %>% 
+  summarise(sp = length(unique(species))) %>% 
+  group_by(method, community, uptake, sp) %>% 
+  tally()
