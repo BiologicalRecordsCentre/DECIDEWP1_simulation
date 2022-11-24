@@ -600,7 +600,8 @@ cno1 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>%
   geom_hline(yintercept = 0, linetype = 'dashed') +
   xlab('') +
   ylab('Delta MSE (lower = better)') +
-  scale_fill_discrete(name = 'Uptake (%)', labels = c(1, 10, 50)) +
+  scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                    values = c("#E69F00", "#56B4E9", "#009E73")) +
   # facet_wrap(~facet) +
   scale_x_discrete(labels= c('Business \n as usual', 'Gap-filling', 'Rare species',
                              'Uncertainty only', 'Uncertainty of \n rare species', 
@@ -614,7 +615,8 @@ cno1
 msen <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'mse'), 
                aes(x = method, y = value, fill = factor(uptake))) +
   geom_boxplot() +
-  scale_fill_discrete(name = "Uptake (%)", labels = c(1, 10, 50)) +
+  scale_fill_manual(name = "Uptake (%)", labels = c(1, 10, 50),
+                    values = c("#E69F00", "#56B4E9", "#009E73")) +
   # facet_wrap(~eval_type,ncol = 3) +
   ylab('Number of models with\n>1% improvement') +
   xlab('') +
@@ -842,7 +844,7 @@ ggplot(subset(tdf, uptake==0.5), aes(visit_numbers, diversity)) +
   geom_point() + 
   xlab('number of visits to a location') +
   facet_wrap(~method)
-  
+
 
 
 # %>% ungroup() %>% 
