@@ -79,6 +79,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
         true_pa <- raster::crop(community[[j]]$pres_abs, prediction)
         
         mse <- mean((raster::getValues(true_prob_occ)-raster::getValues(prediction))^2, na.rm=TRUE)
+        medianse <- median((raster::getValues(true_prob_occ)-raster::getValues(prediction))^2, na.rm=TRUE)
         corr <- cor(raster::getValues(true_prob_occ), raster::getValues(prediction), use = "pairwise.complete")
         auc <- as.numeric(pROC::auc(raster::getValues(true_pa), raster::getValues(prediction), quiet = TRUE))
         
@@ -92,7 +93,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
         mean_sd <- mean(mod_average$sd, na.rm = TRUE)
         max_sd <- max(mod_average$sd, na.rm = TRUE)
         
-        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species, mabse = mabse, sdabse = sdabse, occprobe = occprobe))
+        method_eval <- rbind(method_eval, data.frame(method = k, mse = mse, medianse = medianse, corr = corr, auc = auc, mean_sd = mean_sd, max_sd = max_sd, species = species, mabse = mabse, sdabse = sdabse, occprobe = occprobe))
         
       }
     }#method loop
@@ -117,7 +118,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
   
   eval_table$community <- community_name
   
-  write.csv(eval_table, file = paste0(community_folder, community_name, "_evaluation_table.csv"))
+  write.csv(eval_table, file = paste0(community_folder, community_name, "_evaluation_table2.csv"))
   
   ### different format
   init_tab <- eval_table[eval_table$method =='initial',]
@@ -132,7 +133,7 @@ slurm_evaluate <- function(community_folder, community_version, AS_version, mode
                                             paste0(init_tab$initial_species, init_tab$initial_community))]
   
   # alternate format
-  write.csv(et, file = paste0(community_folder, AS_version, '_', community_name, "_evaluation_table_alt.csv"))
+  write.csv(et, file = paste0(community_folder, AS_version, '_', community_name, "_evaluation_table_alt2.csv"))
   
   
 } #end function
