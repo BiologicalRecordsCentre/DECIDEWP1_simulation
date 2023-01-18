@@ -61,8 +61,8 @@ p_c <- 5
   et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
                                             paste0(init_tab$initial_species, init_tab$initial_community))]
   
-  et$initial_medianse <- init_tab$initial_medianse[match(paste0(et$species, et$community),
-                                            paste0(init_tab$initial_species, init_tab$initial_community))]
+  et$init_medse <- init_tab$initial_medianse[match(paste0(et$species, et$community),
+                                                   paste0(init_tab$initial_species, init_tab$initial_community))]
   et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
                                               paste0(init_tab$initial_species, init_tab$initial_community))]
   et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
@@ -76,7 +76,7 @@ p_c <- 5
   ## get differences
   et <- et %>% 
     mutate(delta_mse = mse - init_mse,
-           delta_median = medianse - initial_medianse,
+           delta_medse = medianse - init_medse,
            delta_corr = corr - init_corr,
            delta_auc = auc - init_auc,
            delta_mean_sd = mean_sd - init_mean_sd,
@@ -162,18 +162,22 @@ p_c <- 5
     mutate(prev_cat = dplyr::ntile(prevalence, 10),
            auc_cat = dplyr::ntile(init_auc, 10),
            mse_cat = dplyr::ntile(init_mse, 10),
+           medse_cat = dplyr::ntile(init_medse, 10),
            corr_cat = dplyr::ntile(init_corr, 10)) %>% 
     # ungroup() %>% 
     # rowwise() %>% 
     mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
            perc_inc_corr = (delta_corr)/(init_corr)*100,
            perc_inc_mse = (delta_mse)/(init_mse)*100,
+           perc_inc_medse = (delta_medse)/(init_medse)*100,
            perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
                                  ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
            perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
                                   ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
            perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
                                  ifelse(perc_inc_mse>= p_c, -p_c, 0)),
+           perc_imp_medse = ifelse(perc_inc_medse<= -p_c, p_c, 
+                                   ifelse(perc_inc_medse>= p_c, -p_c, 0)),
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence", 
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
@@ -187,15 +191,19 @@ p_c <- 5
               n_mods_mse_1 = sum(perc_inc_mse< -1, na.rm = TRUE),
               n_mods_mse_2 = sum(perc_inc_mse< -2, na.rm = TRUE),
               n_mods_mse_5 = sum(perc_inc_mse< -5, na.rm = TRUE),
+              n_mods_medse_1 = sum(perc_inc_medse< -1, na.rm = TRUE),
+              n_mods_medse_2 = sum(perc_inc_medse< -2, na.rm = TRUE),
+              n_mods_medse_5 = sum(perc_inc_medse< -5, na.rm = TRUE),
               n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = TRUE),
               n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = TRUE),
               n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = TRUE)) 
   
-  nmods_l <- pivot_longer(nmods, cols = 4:12) %>% 
+  nmods_l <- pivot_longer(nmods, cols = 4:15) %>% 
     rowwise() %>% 
     mutate(eval_type = ifelse(grepl(x = name, pattern = 'auc'), 'auc',
                               ifelse(grepl(x = name, pattern = 'mse'), 'mse', 
-                                     ifelse(grepl(x = name, pattern = 'corr'), 'corr', 'WRONG'))),
+                                     ifelse(grepl(x = name, pattern = 'corr'), 'corr',
+                                            ifelse(grepl(x = name, pattern = 'medse'), 'medse', 'WRONG')))),
            inc_amount = as.numeric(gsub("[^\\d]+", "", name, perl=TRUE)),
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence", 
@@ -209,12 +217,14 @@ p_c <- 5
     mutate(prev_cat = dplyr::ntile(prevalence, 10),
            auc_cat = dplyr::ntile(init_auc, 10),
            mse_cat = dplyr::ntile(init_mse, 10),
+           medse_cat = dplyr::ntile(init_medse, 10),
            corr_cat = dplyr::ntile(init_corr, 10)) %>% 
     # ungroup() %>% 
     # rowwise() %>% 
     mutate(perc_inc_auc = (delta_auc)/(init_auc)*100,
            perc_inc_corr = (delta_corr)/(init_corr)*100,
            perc_inc_mse = (delta_mse)/(init_mse)*100,
+           perc_inc_medse = (delta_medse)/(init_medse)*100,
            perc_imp_auc = ifelse(perc_inc_auc>= p_c, p_c, 
                                  ifelse(perc_inc_auc<= -p_c, -p_c, 0)),
            perc_imp_corr = ifelse(perc_inc_corr>=p_c, p_c, 
@@ -223,6 +233,10 @@ p_c <- 5
                                  ifelse(perc_inc_mse>= p_c, -p_c, 
                                         ifelse(perc_inc_mse>= -p_c & perc_inc_mse< 0, -2.5,
                                                ifelse(perc_inc_mse<= p_c & perc_inc_mse> 0, 2.5, 0)))),
+           perc_imp_medse = ifelse(perc_inc_medse<= -p_c, p_c, 
+                                 ifelse(perc_inc_medse>= p_c, -p_c, 
+                                        ifelse(perc_inc_medse>= -p_c & perc_inc_medse< 0, -2.5,
+                                               ifelse(perc_inc_medse<= p_c & perc_inc_medse> 0, 2.5, 0)))),
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
@@ -702,6 +716,25 @@ fig4_s <- ggplot(na.omit(subset(etp_p2, uptake == 0.5 & method != 'initial')),
   theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
         text = element_text(size = 14))
 fig4_s
+
+# median
+ggplot(na.omit(subset(etp_p2, uptake == 0.5 & method != 'initial')), 
+       aes(x = prev_cat, fill = factor(perc_imp_medse))) +
+  geom_bar(position="fill") +
+  ylab('Proportion of models') +
+  xlab('Prevalence category') +
+  # ylim(0,0.25) +
+  facet_grid(~method) +
+  scale_fill_manual(name = 'Change in MSE (%)',
+                    # labels = c('< -5', '-5 to -1',
+                    #            '-1 to 1', '1 to 5', '> 5'),
+                    labels = c('< -5', '-5 to 0', '0',
+                               '0 to 5', '> 5'),
+                    values = c("#E69F00", "#56B4E9", "#009E73",
+                               "#0072B2", "#D55E00")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
+        text = element_text(size = 14))
 
 if(write){
   ggsave(fig4_s, filename = 'outputs/plots/paper/figure4_propmods_0_1_5.png',
