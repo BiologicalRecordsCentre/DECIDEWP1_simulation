@@ -29,7 +29,7 @@ for(v in 1:asv){
   
   for(i in 1:length(community_folder)) {
     
-    f_to_read <- list.files(path = community_folder[i], pattern = paste0(AS_version, "_*.*_evaluation_table_alt.csv"), full.names = TRUE)
+    f_to_read <- list.files(path = community_folder[i], pattern = paste0(AS_version, "_*.*_evaluation_table_alt2.csv"), full.names = TRUE)
     f_to_read <- grep(AS_version, f_to_read, value = TRUE)
     
     if(length(f_to_read)==0) next
@@ -41,6 +41,6 @@ for(v in 1:asv){
   out <- do.call(rbind, out_files)
   
   write.csv(out, file = paste0(dirs$outpath, community_version, simulation_run_name, 
-                               "/", AS_version, "_", community_version, "combined_outputs_comm", min(n_communities), "_", max(n_communities), "_spp", max(n_species), ".csv"))
+                               "/", AS_version, "_", community_version, "combined_outputs_comm", min(n_communities), "_", max(n_communities), "_spp", max(n_species), "_v2.csv"))
   
 }

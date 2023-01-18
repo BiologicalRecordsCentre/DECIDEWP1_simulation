@@ -31,21 +31,21 @@ p_c <- 5
                       stringsAsFactors = FALSE)
   
   # load each of the evaluation files 
-  cdf_0.1_uptake <- read.csv('outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50.csv', 
+  cdf_0.1_uptake <- read.csv('outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50_v2.csv', 
                              stringsAsFactors = FALSE) %>%
     mutate(uptake = '0.1',
            asv = 'asv1')
-  cdf_0.01_uptake <- read.csv('outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50.csv', 
+  cdf_0.01_uptake <- read.csv('outputs/v4Community/asv2_v4combined_outputs_comm1_50_spp50_v2.csv', 
                               stringsAsFactors = FALSE) %>%
     mutate(uptake = '0.01',
            asv = 'asv2')
   
-  cdf_0.5_uptake <- read.csv('outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50.csv', 
+  cdf_0.5_uptake <- read.csv('outputs/v4Community/asv4_v4combined_outputs_comm1_50_spp50_v2.csv', 
                              stringsAsFactors = FALSE) %>%
     mutate(uptake = '0.5',
            asv = 'asv4')
   
-  cdf_0_uptake <- read.csv('outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50.csv', 
+  cdf_0_uptake <- read.csv('outputs/v4Community/asv3_v4combined_outputs_comm1_50_spp50_v2.csv', 
                            stringsAsFactors = FALSE) %>%
     mutate(uptake = '0',
            asv = 'asv3')
@@ -60,6 +60,9 @@ p_c <- 5
   
   et$init_mse <- init_tab$initial_mse[match(paste0(et$species, et$community),
                                             paste0(init_tab$initial_species, init_tab$initial_community))]
+  
+  et$initial_medianse <- init_tab$initial_medianse[match(paste0(et$species, et$community),
+                                            paste0(init_tab$initial_species, init_tab$initial_community))]
   et$init_corr <- init_tab$initial_corr[match(paste0(et$species, et$community),
                                               paste0(init_tab$initial_species, init_tab$initial_community))]
   et$init_auc <- init_tab$initial_auc[match(paste0(et$species, et$community),
@@ -73,6 +76,7 @@ p_c <- 5
   ## get differences
   et <- et %>% 
     mutate(delta_mse = mse - init_mse,
+           delta_median = medianse - initial_medianse,
            delta_corr = corr - init_corr,
            delta_auc = auc - init_auc,
            delta_mean_sd = mean_sd - init_mean_sd,
@@ -81,20 +85,23 @@ p_c <- 5
   ## average across communities
   comm_df <- et %>%
     group_by(community, method, uptake) %>%
-    summarise(mse = mean(mse, na.rm = T),
-              corr = mean(corr, na.rm = T),
-              auc = mean(auc, na.rm = T),
-              mean_sd = mean(mean_sd, na.rm = T),
-              max_sd = max(max_sd, na.rm = T),
-              prev = median(prevalence, na.rm = T),
-              init_mse = mean(init_mse, na.rm = T),
-              init_corr = mean(init_corr, na.rm = T),
-              init_auc = mean(init_auc, na.rm = T),
-              init_mean_sd = mean(init_mean_sd, na.rm = T),
-              init_max_sd = max(init_max_sd, na.rm = T),
+    summarise(mse = mean(mse, na.rm = TRUE),
+              medse = mean(medianse, na.rm = TRUE),
+              corr = mean(corr, na.rm = TRUE),
+              auc = mean(auc, na.rm = TRUE),
+              mean_sd = mean(mean_sd, na.rm = TRUE),
+              max_sd = max(max_sd, na.rm = TRUE),
+              prev = median(prevalence, na.rm = TRUE),
+              init_mse = mean(init_mse, na.rm = TRUE),
+              init_medse = mean(initial_medianse, na.rm = TRUE),
+              init_corr = mean(init_corr, na.rm = TRUE),
+              init_auc = mean(init_auc, na.rm = TRUE),
+              init_mean_sd = mean(init_mean_sd, na.rm = TRUE),
+              init_max_sd = max(init_max_sd, na.rm = TRUE),
               prev = median(prev)) %>%
     ungroup() %>% 
     mutate(delta_mse = sqrt(mse) - sqrt(init_mse),
+           delta_medse = (medse) - (init_medse),
            delta_corr = corr - init_corr,
            delta_auc = auc - init_auc,
            delta_mean_sd = mean_sd - init_mean_sd,
@@ -133,7 +140,7 @@ p_c <- 5
   sp_init_locs <- init_nona %>% 
     # na.omit() %>% 
     group_by(method, community, species, prevalence, asv, uptake) %>% 
-    summarise(n = sum(Observed, na.rm = T)) %>% 
+    summarise(n = sum(Observed, na.rm = TRUE)) %>% 
     mutate(id = paste(community, species, prevalence, asv, uptake, sep = '_'))
   
   # new locations for each species
@@ -174,15 +181,15 @@ p_c <- 5
   # number of models with > x% increase
   nmods <- etp %>%
     group_by(community, method, uptake) %>%
-    summarise(n_mods_auc_1 = sum(perc_inc_auc>1, na.rm = T),
-              n_mods_auc_2 = sum(perc_inc_auc>2, na.rm = T),
-              n_mods_auc_5 = sum(perc_inc_auc>5, na.rm = T),
-              n_mods_mse_1 = sum(perc_inc_mse< -1, na.rm = T),
-              n_mods_mse_2 = sum(perc_inc_mse< -2, na.rm = T),
-              n_mods_mse_5 = sum(perc_inc_mse< -5, na.rm = T),
-              n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = T),
-              n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = T),
-              n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = T)) 
+    summarise(n_mods_auc_1 = sum(perc_inc_auc>1, na.rm = TRUE),
+              n_mods_auc_2 = sum(perc_inc_auc>2, na.rm = TRUE),
+              n_mods_auc_5 = sum(perc_inc_auc>5, na.rm = TRUE),
+              n_mods_mse_1 = sum(perc_inc_mse< -1, na.rm = TRUE),
+              n_mods_mse_2 = sum(perc_inc_mse< -2, na.rm = TRUE),
+              n_mods_mse_5 = sum(perc_inc_mse< -5, na.rm = TRUE),
+              n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = TRUE),
+              n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = TRUE),
+              n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = TRUE)) 
   
   nmods_l <- pivot_longer(nmods, cols = 4:12) %>% 
     rowwise() %>% 
@@ -231,7 +238,7 @@ p_c <- 5
     
     ### exploring cell weights
     fls <- list.files('outputs/comm4_asv1_investigating/', 
-                      pattern = 'cellweights', full.names = T)
+                      pattern = 'cellweights', full.names = TRUE)
     
     fls_names <- list.files('outputs/comm4_asv1_investigating/', 
                             pattern = 'cellweights')
@@ -611,6 +618,10 @@ cno1 <- ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>%
 
 cno1
 
+ggplot(comm_df[comm_df$method!='initial' & comm_df$uptake!=0,] %>% 
+         mutate(facet = 'MSE'), 
+       aes(x=method, y = delta_medse, fill = factor(uptake))) +
+  geom_boxplot() 
 
 msen <- ggplot(subset(nmods_l, uptake != 0 & inc_amount == 1 & method != 'initial' & eval_type == 'mse'), 
                aes(x = method, y = value, fill = factor(uptake))) +
