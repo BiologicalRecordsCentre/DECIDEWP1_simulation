@@ -93,7 +93,7 @@ p_c <- 5
               max_sd = max(max_sd, na.rm = TRUE),
               prev = median(prevalence, na.rm = TRUE),
               init_mse = mean(init_mse, na.rm = TRUE),
-              init_medse = mean(initial_medianse, na.rm = TRUE),
+              init_medse = mean(init_medse, na.rm = TRUE),
               init_corr = mean(init_corr, na.rm = TRUE),
               init_auc = mean(init_auc, na.rm = TRUE),
               init_mean_sd = mean(init_mean_sd, na.rm = TRUE),
@@ -182,7 +182,7 @@ p_c <- 5
                            levels=c("initial", "none", "coverage", "prevalence", 
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
   
-  # number of models with > x% increase
+  # number of models with > x% increase in each community
   nmods <- etp %>%
     group_by(community, method, uptake) %>%
     summarise(n_mods_auc_1 = sum(perc_inc_auc>1, na.rm = TRUE),
@@ -231,12 +231,12 @@ p_c <- 5
                                   ifelse(perc_inc_corr<= -p_c, -p_c, 0)),
            perc_imp_mse = ifelse(perc_inc_mse<= -p_c, p_c, 
                                  ifelse(perc_inc_mse>= p_c, -p_c, 
-                                        ifelse(perc_inc_mse>= -p_c & perc_inc_mse< 0, -2.5,
-                                               ifelse(perc_inc_mse<= p_c & perc_inc_mse> 0, 2.5, 0)))),
+                                        ifelse(perc_inc_mse>= -p_c & perc_inc_mse< 0, 2.5,
+                                               ifelse(perc_inc_mse<= p_c & perc_inc_mse> 0, -2.5, 0)))),
            perc_imp_medse = ifelse(perc_inc_medse<= -p_c, p_c, 
                                  ifelse(perc_inc_medse>= p_c, -p_c, 
-                                        ifelse(perc_inc_medse>= -p_c & perc_inc_medse< 0, -2.5,
-                                               ifelse(perc_inc_medse<= p_c & perc_inc_medse> 0, 2.5, 0)))),
+                                        ifelse(perc_inc_medse> -p_c & perc_inc_medse< 0, 2.5,
+                                               ifelse(perc_inc_medse< p_c & perc_inc_medse> 0, -2.5, 0)))),
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
@@ -705,7 +705,7 @@ fig4_s <- ggplot(na.omit(subset(etp_p2, uptake == 0.5 & method != 'initial')),
   xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_grid(~method) +
-  scale_fill_manual(name = 'Change in MSE (%)', 
+  scale_fill_manual(name = 'Improvement in\nmodel MSE (%)', 
                     # labels = c('< -5', '-5 to -1', 
                     #            '-1 to 1', '1 to 5', '> 5'),
                     labels = c('< -5', '-5 to 0', 
@@ -725,7 +725,7 @@ ggplot(na.omit(subset(etp_p2, uptake == 0.5 & method != 'initial')),
   xlab('Prevalence category') +
   # ylim(0,0.25) +
   facet_grid(~method) +
-  scale_fill_manual(name = 'Change in MSE (%)',
+  scale_fill_manual(name = 'Improvement in model\nMSE (%)',
                     # labels = c('< -5', '-5 to -1',
                     #            '-1 to 1', '1 to 5', '> 5'),
                     labels = c('< -5', '-5 to 0', '0',
@@ -751,7 +751,7 @@ if(write){
 s1 <- ggplot(data = subset(loc_summ, uptake==0.5), 
              aes(x=method, y=total_obs)) +
   geom_boxplot() +
-  ylab('Total observations\nper community') +
+  ylab('Total new observations\nper community') +
   xlab('') +
   theme_classic() +
   theme(axis.text.x = element_blank(),
