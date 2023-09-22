@@ -5,7 +5,7 @@ library(viridis)
 library(ggridges)
 library(patchwork)
 
-write = TRUE
+write = FALSE
 
 
 ## set percentage change
@@ -388,7 +388,7 @@ p_c <- 5
   world <- ne_countries(scale = "medium", type = 'map_units', returnclass = "sf")
   class(world)
   
-  # get czech map
+  # get GB map
   uk <- world[world$admin == 'United Kingdom',]
   gb <- uk[uk$name != 'N. Ireland',] %>% 
     st_transform(crs = 27700)
@@ -396,6 +396,8 @@ p_c <- 5
   # get community data
   c4 <- readRDS('outputs/v4Community/v4community_1_50_sim_initial.rds')
   c4cov <- readRDS('outputs/comm4_asv1_investigating/asv1_v4community_1_50_sim_initial_AS_uncertainty.rds')
+  
+  # model outputs
   load('outputs/comm4_asv1_investigating/asv1_v4lr_SDMs_GBnew_Sp5_initial_AS_uncertainty.rdata')
   
   
@@ -751,7 +753,7 @@ if(write){
 s1 <- ggplot(data = subset(loc_summ, uptake==0.5), 
              aes(x=method, y=total_obs)) +
   geom_boxplot() +
-  ylab('Total new observations\nper community') +
+  ylab('Number of observations\nfrom new locations') +
   xlab('') +
   theme_classic() +
   theme(axis.text.x = element_blank(),
@@ -760,7 +762,7 @@ s1 <- ggplot(data = subset(loc_summ, uptake==0.5),
 s2 <- ggplot(data = subset(loc_summ, uptake==0.5), 
              aes(x=method, y=diversity)) +
   geom_boxplot() +
-  ylab('Species diversity\nper community') +
+  ylab('Species diversity\nat new locations') +
   xlab('') +
   theme_classic() +
   theme(axis.text.x = element_blank(),
@@ -769,7 +771,7 @@ s2 <- ggplot(data = subset(loc_summ, uptake==0.5),
 s3 <- ggplot(data = subset(prev_df_unique, uptake==0.5), 
              aes(x=method, y=med_prev)) +
   geom_boxplot() +
-  ylab('Median prevalence\nper community') +
+  ylab('Median prevalence\nat new locations') +
   xlab('') +
   theme_classic() +
   theme(text = element_text(size = 12))
