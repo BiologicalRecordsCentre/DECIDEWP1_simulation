@@ -17,13 +17,13 @@ dirs <- config::get("LOTUSpaths")
 source(paste0(dirs$inpath, 'reformat_simulated_data.R'))
 
 # number of communities to get through
-n_communities = 1:20
+n_communities = 1:50
 
 # lapply through all communities
 all_comm <- lapply(n_communities, FUN = function(com_n){
   
   # read in community data
-  spdata <- paste0(dirs$commpath, sprintf("community_%i_50_sim/community_%i_50_sim_initial.rds", com_n, com_n))
+  spdata <- paste0(dirs$commpath, sprintf("v4communities_1km/v4community_%i_50_sim/v4community_%i_50_sim_initial.rds", com_n, com_n))
   
   # load in community data
   community <- readRDS(spdata)
@@ -39,7 +39,7 @@ all_comm <- lapply(n_communities, FUN = function(com_n){
 all_comm_out <- do.call(rbind, all_comm)
 
 # write to csv
-write.csv(all_comm_out, file = paste0(dirs$outpath, 'combined_community_', paste0(range(n_communities), collapse = '_'), '_output.csv'))
+write.csv(all_comm_out, file = paste0(dirs$outpath, 'v4combined_community_', paste0(range(n_communities), collapse = '_'), '_output.csv'))
 
 
 ################################### Home PC

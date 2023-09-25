@@ -18,8 +18,9 @@ meth_names <- list(
   "Gap-filling\nwith uncertainty"
 )
 
+write = TRUE
 
-## create evaluation data frame
+## create evaluation data frames
 {
   # load each of the evaluation files 
   cdf_0.1_uptake <- read.csv('outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50_v2.csv', 
@@ -88,15 +89,17 @@ meth_names <- list(
               init_auc = mean(init_auc, na.rm = TRUE),
               init_mean_sd = mean(init_mean_sd, na.rm = TRUE),
               init_max_sd = max(init_max_sd, na.rm = TRUE),
-              prev = median(prev)) %>%
+              prev = median(prev),
+              
+              # mean of deltas
+              delta_mse = mean(delta_mse, na.rm = TRUE),
+              delta_medse = mean(delta_mse, na.rm = TRUE),
+              delta_corr = mean(delta_corr, na.rm = TRUE),
+              delta_auc = mean(delta_auc, na.rm = TRUE),
+              delta_mean_sd = mean(delta_mean_sd, na.rm = TRUE),
+              delta_max_sd = mean(delta_max_sd, na.rm = TRUE)) %>%
     ungroup() %>% 
-    mutate(delta_mse = sqrt(mse) - sqrt(init_mse),
-           delta_medse = (medse) - (init_medse),
-           delta_corr = corr - init_corr,
-           delta_auc = auc - init_auc,
-           delta_mean_sd = mean_sd - init_mean_sd,
-           delta_max_sd = max_sd - init_max_sd,
-           method = factor(method, 
+    mutate(method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
                                     "uncertainty", "unc_plus_prev", "unc_plus_recs")))
   
@@ -194,12 +197,11 @@ meth_names <- list(
     ylab('Delta MSE (lower = better)') +
     scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
                       values = c("#E69F00", "#56B4E9", "#009E73")) +
-    # facet_wrap(~facet) +
     scale_x_discrete(labels= c('Business \n as usual', 'Gap-filling', 'Rare species',
                                'Uncertainty only', 'Uncertainty of \n rare species', 
                                'Gap-filling \n with uncertainty')) +
     theme(text = element_text(size = 12),
-          axis.text.x = element_blank()) #element_text(size = 12, angle = 0, vjust = 0))
+          axis.text.x = element_blank())
   
   cno1
   
@@ -212,9 +214,7 @@ meth_names <- list(
     # facet_wrap(~eval_type,ncol = 3) +
     ylab('Number of models with\n>1% improvement') +
     xlab('') +
-    # ggtitle('Number of models with 1% improvement for different uptake values') +
     theme_bw() +
-    # theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10)) +
     scale_x_discrete(labels= c('Business \n as usual', 'Gap-filling', 'Rare species',
                                'Uncertainty\nonly', 'Uncertainty of \n rare species', 
                                'Gap-filling \n with uncertainty')) + 
@@ -227,7 +227,7 @@ meth_names <- list(
   fig3
   
   if(write){
-    ggsave(fig3, filename = 'outputs/plots/paper/figure3_improve_uptake.png',
+    ggsave(fig3, filename = 'outputs/plots/paper/analysis_plots/figure3_improve_uptake.png',
            width = 9.5, height = 9.5)
   }
 }
@@ -257,7 +257,7 @@ meth_names <- list(
   
   
   if(write){
-    ggsave(fig4, filename = 'outputs/plots/paper/figure4_propmods_0_1_5.png',
+    ggsave(fig4, filename = 'outputs/plots/paper/analysis_plots/figure4_propmods_0_1_5.png',
            width = 11, height = 5)
   }
   

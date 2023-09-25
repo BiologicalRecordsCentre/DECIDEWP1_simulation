@@ -9,13 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE)
 
 library(terra)
-library(ggbiplot)
+# library(ggbiplot)
 library(tidyverse)
 ```
 
 ```{r read_env_files}
 # environmental data
-env <- terra::rast('../data/environmental_data/envdata_1km_no_corr_noNA.grd')
+env <- terra::rast('../../data/environmental_data/envdata_1km_no_corr_noNA.grd')
 ```
 
 ```{r load_species_files}
@@ -31,7 +31,7 @@ for(com in 1:1) { # community
     
     for(m in seq_along(method)) {
       
-      cov <- readRDS(paste0('../outputs/comm4_asv1_investigating/asv',a,'_v4community_', com, '_50_sim_initial_AS_', method[m], '.rds'))
+      cov <- readRDS(paste0('../../outputs/comm4_asv1_investigating/asv',a,'_v4community_', com, '_50_sim_initial_AS_', method[m], '.rds'))
       
       obvs <- data.frame()
       
@@ -60,7 +60,7 @@ head(method_locs)
 ```{r reduce_data_size}
 
 # get initial observations for each species
-obvsinit <- readRDS('../outputs/comm4_asv1_investigating/v4community_1_50_sim_initial.rds')
+obvsinit <- readRDS('../../outputs/comm4_asv1_investigating/v4community_1_50_sim_initial.rds')
 
 init_obvs <- data.frame()
 for(i in 1:length(obvsinit)) {
@@ -305,9 +305,12 @@ ggplot(dfasv$ellip_dat, aes(xvar, yvar, col = groups, group = groups)) +
   xlab('PC1') + ylab('PC2') +
   geom_path()
 
-ggplot(dfmeth$ellip_dat, aes(xvar, yvar, col = groups, group = groups)) +
+ggplot() +
   xlab('PC1') + ylab('PC2') +
-  geom_path()
+  geom_path(data = subset(dfmeth$ellip_dat, groups != 'true'), 
+            aes(x = xvar, y = yvar, col = groups, group = groups)) +
+  geom_path(data = subset(dfmeth$ellip_dat, groups == 'true'), 
+            aes(x = xvar, y = yvar, col = 'truth', group = groups), linetype = 'dashed', width = 2)
 
 ```
 

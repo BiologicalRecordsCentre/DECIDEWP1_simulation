@@ -5,7 +5,7 @@
 library(tidyverse)
 
 # butterflies
-bdf <- read_csv("~/DECIDE/DECIDE_WP1/data/edited_insect_data/butterfly/butterfly_EastNorths_no_duplicates.csv") %>% 
+bdf <- read_csv("../DECIDE_WP1/data/edited_insect_data/butterfly/butterfly_EastNorths_no_duplicates_2021_12_06.csv") %>% 
   as.data.frame()
 head(bdf)
 bdf$lon[1]

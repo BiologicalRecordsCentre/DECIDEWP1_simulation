@@ -205,7 +205,7 @@ method <- c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs
   p_obs
   
   if(write){
-    ggsave(p_obs, filename = paste0('outputs/plots/paper/figure1_simmethodplot_sp_obs.png'),
+    ggsave(p_obs, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_sp_obs.png'),
            bg = 'transparent', width = 4.46, height = 7)
   }
   
@@ -259,21 +259,21 @@ method <- c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs
   
   if(write) {  
     # environmental layers
-    ggsave(ed1, filename = paste0('outputs/plots/paper/figure1_simmethodplot_antemp.png'),
+    ggsave(ed1, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_antemp.png'),
            bg = 'transparent', width = 4.46, height = 7)  
-    ggsave(ed2, filename = paste0('outputs/plots/paper/figure1_simmethodplot_mnditemp.png'),
+    ggsave(ed2, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_mnditemp.png'),
            bg = 'transparent', width = 4.46, height = 7)  
-    ggsave(ed3, filename = paste0('outputs/plots/paper/figure1_simmethodplot_isotherm.png'),
+    ggsave(ed3, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_isotherm.png'),
            bg = 'transparent', width = 4.46, height = 7)
     
     # species layers
-    ggsave(true_sp, filename = paste0('outputs/plots/paper/figure1_simmethodplot_truepres.png'),
+    ggsave(true_sp, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_truepres.png'),
            bg = 'transparent', width = 4.46, height = 7)  
     
-    ggsave(pred_sp_pl5, filename = paste0('outputs/plots/paper/figure1_simmethodplot_predpres_sp5.png'),
+    ggsave(pred_sp_pl5, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_predpres_sp5.png'),
            bg = 'transparent', width = 4.46, height = 7)  
     
-    ggsave(pred_sp_pl50, filename = paste0('outputs/plots/paper/figure1_simmethodplot_predpres_sp50.png'),
+    ggsave(pred_sp_pl50, filename = paste0('outputs/plots/paper/methods_plots/figure1_simmethodplot_predpres_sp50.png'),
            bg = 'transparent', width = 4.46, height = 7)  
   }
 }
@@ -296,7 +296,7 @@ method <- c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs
       theme(legend.position = 'none') 
     
     if(write){
-      ggsave(p, filename = paste0('outputs/plots/paper/figure2_ASmethodplot_', as_method[md], '.png'),
+      ggsave(p, filename = paste0('outputs/plots/paper/methods_plots/figure2_ASmethodplot_', as_method[md], '.png'),
              bg = 'transparent', width = 2.2, height = 2.2)
     }
   }
@@ -311,7 +311,7 @@ method <- c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs
       theme(legend.position = 'none')
     
     if(write){
-      ggsave(p_nas, filename = paste0('outputs/plots/paper/figure2_ASmethodplot_', m, '.png'),
+      ggsave(p_nas, filename = paste0('outputs/plots/paper/methods_plots/figure2_ASmethodplot_', m, '.png'),
              bg = 'transparent', width = 2.2, height = 2.2)
     }
   }
