@@ -180,6 +180,50 @@ write = TRUE
 }
 
 
+## create observations data frame
+{
+  ## load all the observations for each of the AS versions
+  asv1 <- read_csv('outputs/v4Community/asv1_v4all_observations.csv') %>% 
+    mutate(uptake = 0.1,
+           asv = 'asv1')
+  asv2 <- read_csv('outputs/v4Community/asv2_v4all_observations.csv') %>% 
+    mutate(uptake = 0.01,
+           asv = 'asv2')
+  asv3 <- read_csv('outputs/v4Community/asv3_v4all_observations.csv') %>% 
+    mutate(uptake = 0,
+           asv = 'asv3')
+  asv4 <- read_csv('outputs/v4Community/asv4_v4all_observations.csv') %>% 
+    mutate(uptake = 0.5,
+           asv = 'asv4')
+  
+  # bind all together, reorder and rename the methods
+  df <- rbind(asv1,asv2,asv3,asv4) %>% 
+    mutate(method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence",  
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  levels(df$method) <- unlist(meth_names)
+  
+  
+  # extract the initial locations
+  init_nona <- df[which(df$method == 'initial'),]
+  
+  # remove all initial locations so that we're only looking at new locations
+  new_locs <- df[!df$id %in% init_nona$id,]
+  
+  # calculate number of observations in new locations for each community
+  comm_new_locs <- new_locs %>% 
+    mutate(locid = paste(lon, lat, sep = '_')) %>% 
+    group_by(method, community, uptake) %>% 
+    summarise(unique_new_locs_community = length(unique(locid)))
+  
+  # calculate the number of observations in new locations for each species
+  sp_new_locs <- new_locs %>% 
+    mutate(locid = paste(lon, lat, sep = '_')) %>% 
+    group_by(method, community, species, prevalence, asv, uptake) %>% 
+    summarise(new_locations_species = length(unique(locid)))
+  
+}
+
 
 #### figure 3 - model improvements + N models > %
 {
@@ -262,3 +306,252 @@ write = TRUE
   }
   
 }
+
+
+
+#### figure 5 - number of new locations by community and by species
+{
+  # number of new locations for each species
+  ## How many new locations are  each species seen in? (one observation in each location only though)
+  fig5a <- ggplot(data = subset(sp_new_locs, method != 'initial' & uptake != 0), 
+                  aes(x=method, y=new_locations_species, fill = factor(uptake))) +
+    geom_boxplot() +
+    ylab('Number of observations in\nnew locations per species') +
+    xlab('') +
+    scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                      values = c("#E69F00", "#56B4E9", "#009E73")) +
+    theme_classic() +
+    theme(axis.text.x = element_blank(),
+          text = element_text(size = 12))
+  
+  # number of new locations per community
+  ## in a community, how many new locations are visited?
+  fig5b <- ggplot(data = subset(comm_new_locs, method != 'initial' & uptake != 0), 
+                  aes(x=method, y=unique_new_locs_community, fill = factor(uptake))) +
+    geom_boxplot() +
+    ylab('Number of observations in\nnew locations per community') +
+    xlab('') +
+    scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                      values = c("#E69F00", "#56B4E9", "#009E73")) +
+    theme_classic() +
+    theme(text = element_text(size = 12))
+  
+  fig5 <- fig5a/fig5b + 
+    plot_annotation(tag_levels = 'a') + 
+    plot_layout(guides = 'collect')
+  fig5
+  
+  if(write){
+    ggsave(fig5, filename = 'outputs/plots/paper/analysis_plots/figure5_new_locs.png',
+           width = 9.5, height = 9.5)
+  }
+}
+
+
+
+# Proportion of a species' total range covered by new locations from each sampling method
+## How much of the species' true range is sampled using each of the sampling methods?
+
+# better to look at the change because that will be dwarfed by the total number of observations
+# this is just the number of new observations that I've already calculated in new_locs
+
+
+### first, get the number of cells that every species occurs in
+# use the prevalence * n_cells_uk
+
+## to get the total number of cells in the uk
+# get environmental data
+library(terra)
+
+# climate layers cover all cells
+env_data <- rast('data/environmental_data/envdata_1km_no_corr_noNA.grd')[[22]] 
+edf <- as.data.frame(env_data, xy=TRUE)
+head(edf)
+dim(edf) # nrows = n_cells that aren't NA
+
+# calculate number of cells that each species occurs in
+new_locs$prevalence_ncells <- new_locs$prevalence * dim(edf)[1]
+
+# calculate the proportion range that new observations cover
+prop_range <- new_locs %>% 
+  na.omit() %>% 
+  group_by(community, uptake, method, species, prevalence_ncells) %>% 
+  summarise(new_obs = sum(Observed), # total number of new observations
+            prevalence = unique(prevalence), # original prevalence
+            prevalence_ncells = unique(prevalence_ncells)) %>% # the
+  mutate(prop_cov_increase = new_obs/prevalence_ncells, # change in the proportion of the TRUE range that is sampled
+         sp_id = paste(community, uptake, species, sep = "_"))
+
+
+ggplot(subset(prop_range, uptake!=0), aes(x = method, y = prop_cov_increase, fill = factor(uptake))) +
+  geom_boxplot() +
+  # ylim(0, 2*sd(prop_range$prop_cov)) +
+  ylab("Increase in coverage of species ranges\nfrom new observations") +
+  xlab('') +
+  scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                    values = c("#E69F00", "#56B4E9", "#009E73")) +
+  theme_classic()
+
+
+##
+
+
+
+
+############# Ignore rest of this I think
+
+# number of new sightings vs prevalence of the species
+ggplot(data = subset(sp_new_locs, method != 'initial' & uptake == 0.5), 
+       aes(x=prevalence, y=new_observations_species, colour = factor(uptake))) +
+  geom_point() +
+  facet_wrap(~factor(method)) +
+  theme_bw()
+
+# the prevalence of species at new sites
+species_summs_df <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake, locid) %>% # group by site in each new 
+  summarise(nsp = length(species),
+            prev_per_loc = median(prevalence),
+            unique_species_per_loc = length(unique(species)),
+            num_species_per_loc = sum(Observed)) # %>% 
+# mutate(method = factor(method, 
+#                        levels=c("initial", "none", "coverage", "prevalence",  
+#                                 "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+
+# species_summs_df <- species_summs_df[!duplicated(species_summs_df),]
+
+ggplot(subset(species_summs_df, method != 'initial' & uptake != 0),
+       aes(x = method, y = prev_per_loc, fill = factor(uptake))) +
+  geom_boxplot()
+
+
+ggplot(subset(species_summs_df, method != 'initial' & uptake != 0),
+       aes(x = method, y = unique_species_per_loc, fill = factor(uptake))) +
+  geom_boxplot()
+
+
+ggplot(subset(species_summs_df, method != 'initial' & uptake != 0),
+       aes(x = method, y = num_species_per_loc, fill = factor(uptake))) +
+  geom_boxplot()
+
+
+
+
+### community level stuff
+loc_summ <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake) %>% # work out some community-level summaries
+  summarise(unique_locs = length(unique(locid)), # number of new sites visited for each community
+            total_obs = sum(Observed),
+            diversity = length(unique(species))) #%>%  # n unique species
+#   mutate(method = factor(method, 
+#                          levels=c("initial", "none", "coverage", "prevalence",  
+#                                   "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+# levels(loc_summ$method) <- unlist(meth_names)
+
+
+
+# number of new sites visited in each community
+ggplot(data = subset(loc_summ, method != 'initial' & uptake != 0), 
+       aes(x=method, y=unique_locs, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Number of new locations visited\nper community') +
+  xlab('') +
+  scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                    values = c("#E69F00", "#56B4E9", "#009E73")) +
+  theme_classic() +
+  theme(#axis.text.x = element_blank(),
+    text = element_text(size = 12))
+
+
+
+# total number of observations from new locations
+ggplot(data = subset(loc_summ, method != 'initial' & uptake != 0), 
+       aes(x=method, y=total_obs, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Total number of observations\nfrom new locations') +
+  xlab('') +
+  scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                    values = c("#E69F00", "#56B4E9", "#009E73")) +
+  theme_classic() +
+  theme(#axis.text.x = element_blank(),
+    text = element_text(size = 12))
+
+
+
+
+
+
+## determine differences in observations/characteristics per community/uptake
+loc_summ <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake) %>% # work out some community-level summaries
+  summarise(total_obs = sum(Observed),
+            unique_locs = length(unique(locid)),
+            av_obs_per_loc = sum(Observed)/unique_locs, # number of observations per location
+            diversity = length(unique(species)), # n unique species
+            av_div_per_loc = sum(length(unique(species)))/unique_locs) %>% # n unique species per location
+  mutate(method = factor(method, 
+                         levels=c("initial", "none", "coverage", "prevalence",  
+                                  "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+
+prev_per_loc <- new_locs %>% 
+  na.omit() %>% 
+  mutate(locid = paste(lon, lat, sep = '_')) %>% 
+  group_by(method, community, uptake, locid) %>% # work out median prevalence per location
+  summarise(prev_per_loc = median(prevalence),
+            unique_species_per_loc = length(unique(species)),
+            num_species_per_loc = sum(Observed)) %>% 
+  mutate(method = factor(method, 
+                         levels=c("initial", "none", "coverage", "prevalence",  
+                                  "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+
+
+
+
+
+
+ggplot(data = subset(sp_new_locs,method != 'initial' & uptake != 0), 
+       aes(x=method, y=n, fill = factor(uptake))) +
+  geom_boxplot() +
+  ylab('Number of new locations visited') +
+  xlab('') +
+  theme_classic() +
+  theme(#axis.text.x = element_blank(),
+    text = element_text(size = 12))
+
+## plots
+# total number of observations per community
+s1 <- ggplot(data = subset(loc_summ,method != 'initial' & uptake == 0.5), 
+             aes(x=method, y=unique_locs)) +
+  geom_boxplot() +
+  ylab('Number of new locations visited') +
+  xlab('') +
+  theme_classic() +
+  theme(#axis.text.x = element_blank(),
+    text = element_text(size = 12))
+
+s2 <- ggplot(data = subset(loc_summ, uptake==0.5), 
+             aes(x=method, y=av_div_per_loc)) +
+  geom_boxplot() +
+  ylab('Species diversity\nper new location') +
+  xlab('') +
+  theme_classic() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size = 12))
+
+s3 <- ggplot(data = subset(prev_df_unique, uptake==0.5), 
+             aes(x=method, y=med_prev)) +
+  geom_boxplot() +
+  ylab('Median prevalence\nat new locations') +
+  xlab('') +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+
+fig5 <- s1/s2/s3 +
+  plot_annotation(tag_levels = 'a')
+fig5

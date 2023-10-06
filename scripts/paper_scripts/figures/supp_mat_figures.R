@@ -445,3 +445,14 @@ write = TRUE
            width = 11, height = 10)
   }
 }
+
+
+## figure 5 - blaaaahh
+
+
+## Raw AUC/MSE/correlations scores for models before/after AS? 
+head(et)
+eval_comp <- subset(et, method != 'initial') %>% 
+  dplyr::select(method, community, uptake, species, mse, corr, auc, init_mse, init_auc, init_corr)
+
+ggplot()
