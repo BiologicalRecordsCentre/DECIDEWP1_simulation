@@ -112,11 +112,11 @@ write = TRUE
   
   etp <- et %>% 
     # split data into different categories
-    mutate(prev_cat = dplyr::ntile(prevalence, 10), # prevalence
-           auc_cat = dplyr::ntile(init_auc, 10),
-           mse_cat = dplyr::ntile(init_mse, 10),
-           medse_cat = dplyr::ntile(init_medse, 10),
-           corr_cat = dplyr::ntile(init_corr, 10),
+    mutate(prev_cat = as.numeric(cut_number(prevalence,10)), #dplyr::ntile(prevalence, 10), # prevalence
+           auc_cat = as.numeric(cut_number(init_auc,10)), #dplyr::ntile(init_auc, 10),
+           mse_cat = as.numeric(cut_number(init_mse,10)), #dplyr::ntile(init_mse, 10),
+           medse_cat = as.numeric(cut_number(init_medse,10)), #dplyr::ntile(init_medse, 10),
+           corr_cat = as.numeric(cut_number(init_corr,10)), #dplyr::ntile(init_corr, 10))
            
            # get percentage increase
            perc_inc_auc = (delta_auc)/(init_auc)*100,
@@ -336,6 +336,7 @@ write = TRUE
     theme_classic() +
     theme(text = element_text(size = 12))
   
+  
   fig5 <- fig5a/fig5b + 
     plot_annotation(tag_levels = 'a') + 
     plot_layout(guides = 'collect')
@@ -349,48 +350,9 @@ write = TRUE
 
 
 
-# Proportion of a species' total range covered by new locations from each sampling method
-## How much of the species' true range is sampled using each of the sampling methods?
-
-# better to look at the change because that will be dwarfed by the total number of observations
-# this is just the number of new observations that I've already calculated in new_locs
 
 
-### first, get the number of cells that every species occurs in
-# use the prevalence * n_cells_uk
 
-## to get the total number of cells in the uk
-# get environmental data
-library(terra)
-
-# climate layers cover all cells
-env_data <- rast('data/environmental_data/envdata_1km_no_corr_noNA.grd')[[22]] 
-edf <- as.data.frame(env_data, xy=TRUE)
-head(edf)
-dim(edf) # nrows = n_cells that aren't NA
-
-# calculate number of cells that each species occurs in
-new_locs$prevalence_ncells <- new_locs$prevalence * dim(edf)[1]
-
-# calculate the proportion range that new observations cover
-prop_range <- new_locs %>% 
-  na.omit() %>% 
-  group_by(community, uptake, method, species, prevalence_ncells) %>% 
-  summarise(new_obs = sum(Observed), # total number of new observations
-            prevalence = unique(prevalence), # original prevalence
-            prevalence_ncells = unique(prevalence_ncells)) %>% # the
-  mutate(prop_cov_increase = new_obs/prevalence_ncells, # change in the proportion of the TRUE range that is sampled
-         sp_id = paste(community, uptake, species, sep = "_"))
-
-
-ggplot(subset(prop_range, uptake!=0), aes(x = method, y = prop_cov_increase, fill = factor(uptake))) +
-  geom_boxplot() +
-  # ylim(0, 2*sd(prop_range$prop_cov)) +
-  ylab("Increase in coverage of species ranges\nfrom new observations") +
-  xlab('') +
-  scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
-                    values = c("#E69F00", "#56B4E9", "#009E73")) +
-  theme_classic()
 
 
 ##

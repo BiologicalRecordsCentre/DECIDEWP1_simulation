@@ -5,6 +5,16 @@ library(tidyverse)
 
 write = TRUE
 
+# Full method names for renaming
+meth_names <- list(
+  "initial",
+  "Business\nas usual",
+  "Gap-filling",
+  "Rare species",
+  "Uncertainty only",
+  "Uncertainty of\nrare species",
+  "Gap-filling\nwith uncertainty"
+)
 
 # Butterfly rank abundance curve
 {
@@ -60,7 +70,8 @@ write = TRUE
     group_by(community_name) %>% 
     arrange(-prev) %>% 
     mutate(rank = 1:50) %>% 
-    arrange(X)
+    arrange(X) %>%
+    ungroup()
   
   head(ra_c)
   
@@ -79,22 +90,10 @@ write = TRUE
   }  
 }
 
-
 #### Extra evaluation metrics
 
-## create evaluation data frames
+# create evaluation data frames
 {
-  
-  # Full method names for renaming
-  meth_names <- list(
-    "initial",
-    "Business\nas usual",
-    "Gap-filling",
-    "Rare species",
-    "Uncertainty only",
-    "Uncertainty of\nrare species",
-    "Gap-filling\nwith uncertainty"
-  )
   
   # load each of the evaluation files 
   cdf_0.1_uptake <- read.csv('outputs/v4Community/asv1_v4combined_outputs_comm1_50_spp50_v2.csv', 
@@ -186,11 +185,11 @@ write = TRUE
   
   etp <- et %>% 
     # split data into different categories
-    mutate(prev_cat = dplyr::ntile(prevalence, 10), # prevalence
-           auc_cat = dplyr::ntile(init_auc, 10),
-           mse_cat = dplyr::ntile(init_mse, 10),
-           medse_cat = dplyr::ntile(init_medse, 10),
-           corr_cat = dplyr::ntile(init_corr, 10),
+    mutate(prev_cat = as.numeric(cut_number(prevalence,10)), #dplyr::ntile(prevalence, 10), # prevalence
+           auc_cat = as.numeric(cut_number(init_auc,10)), #dplyr::ntile(init_auc, 10),
+           mse_cat = as.numeric(cut_number(init_mse,10)), #dplyr::ntile(init_mse, 10),
+           medse_cat = as.numeric(cut_number(init_medse,10)), #dplyr::ntile(init_medse, 10),
+           corr_cat = as.numeric(cut_number(init_corr,10)), #dplyr::ntile(init_corr, 10))
            
            # get percentage increase
            perc_inc_auc = (delta_auc)/(init_auc)*100,
@@ -217,7 +216,8 @@ write = TRUE
                                                  ifelse(perc_inc_medse< p_c & perc_inc_medse> 0, -2.5, 0)))),
            method = factor(method, 
                            levels=c("initial", "none", "coverage", "prevalence",  
-                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs"))) %>%
+    ungroup()
   
   # remove initial data
   etp_p2 <- subset(etp, method != 'initial')
@@ -237,7 +237,8 @@ write = TRUE
               n_mods_medse_5 = sum(perc_inc_medse< -5, na.rm = TRUE),
               n_mods_corr_1 = sum(perc_inc_corr>1, na.rm = TRUE),
               n_mods_corr_2 = sum(perc_inc_corr>2, na.rm = TRUE),
-              n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = TRUE)) 
+              n_mods_corr_5 = sum(perc_inc_corr>5, na.rm = TRUE)) %>%
+    ungroup()
   
   # pivot to long format
   nmods_l <- pivot_longer(nmods, cols = 4:15) %>% 
@@ -253,6 +254,78 @@ write = TRUE
   
 }
 
+# create proportion increase of range data frame
+{
+  
+  ## load all the observations for each of the AS versions
+  asv1 <- read_csv('outputs/v4Community/asv1_v4all_observations.csv') %>% 
+    mutate(uptake = 0.1,
+           asv = 'asv1')
+  asv2 <- read_csv('outputs/v4Community/asv2_v4all_observations.csv') %>% 
+    mutate(uptake = 0.01,
+           asv = 'asv2')
+  asv3 <- read_csv('outputs/v4Community/asv3_v4all_observations.csv') %>% 
+    mutate(uptake = 0,
+           asv = 'asv3')
+  asv4 <- read_csv('outputs/v4Community/asv4_v4all_observations.csv') %>% 
+    mutate(uptake = 0.5,
+           asv = 'asv4')
+  
+  # bind all together, reorder and rename the methods
+  df <- rbind(asv1,asv2,asv3,asv4) %>% 
+    mutate(method = factor(method, 
+                           levels=c("initial", "none", "coverage", "prevalence",  
+                                    "uncertainty", "unc_plus_prev", "unc_plus_recs")))
+  levels(df$method) <- unlist(meth_names)
+  
+  
+  # extract the initial locations
+  init_nona <- df[which(df$method == 'initial'),]
+  
+  # remove all initial locations so that we're only looking at new locations
+  new_locs <- df[!df$id %in% init_nona$id,]
+  
+  
+  # Calculate Proportion of a species' total range covered by new locations from each sampling method
+  ## How much of the species' true range is sampled using each of the sampling methods?
+  # better to look at the change because that will be dwarfed by the total number of observations
+  # this is just the number of new observations that I've already calculated in new_locs
+  
+  
+  ### first, get the number of cells that every species occurs in
+  # use the prevalence * n_cells_uk
+  
+  ## to get the total number of cells in the uk
+  # get environmental data
+  library(terra)
+  
+  # climate layers cover all cells
+  env_data <- rast('data/environmental_data/envdata_1km_no_corr_noNA.grd')[[22]] 
+  edf <- as.data.frame(env_data, xy=TRUE)
+  head(edf)
+  dim(edf) # nrows = n_cells that aren't NA
+  
+  # calculate number of cells that each species occurs in
+  new_locs$prevalence_ncells <- new_locs$prevalence * dim(edf)[1]
+  
+  # calculate the proportion range that new observations cover
+  prop_range <- new_locs %>%
+    mutate(prev_cat = as.numeric(cut_number(prevalence,10))) %>% # prevalence category)
+    na.omit() %>% 
+    group_by(community, uptake, method, species, prevalence_ncells) %>% 
+    summarise(new_obs = sum(Observed), # total number of new observations
+              prevalence = unique(prevalence), # original prevalence
+              prev_cat = unique(prev_cat),
+              prevalence_ncells = unique(prevalence_ncells))  %>%
+    ungroup() %>% 
+    mutate(prop_cov_increase = new_obs/prevalence_ncells, # change in the proportion of the TRUE range that is sampled
+           prop_cov_inc_cat = dplyr::ntile(prop_cov_increase, 4),
+           sp_id = paste(community, uptake, species, sep = "_"))
+  
+}
+
+
+#### Plotting -----
 
 ## figure 3 - model improvements + N models > %
 {
@@ -447,12 +520,83 @@ write = TRUE
 }
 
 
-## figure 5 - blaaaahh
-
+## figure 5 - Proportion of a species' total range covered by new locations from each sampling method
+{
+  ## How much of the species' true range is sampled using each of the sampling methods?
+  fig5_proprange_full <- ggplot(subset(prop_range, uptake!=0), aes(x = method, y = prop_cov_increase, fill = factor(uptake))) +
+    geom_boxplot() +
+    # ylim(0, 0.04)+ #3*sd(prop_range$prop_cov_increase)) +
+    ylab("Increase in coverage of species ranges\nfrom new observations") +
+    xlab('') +
+    scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                      values = c("#E69F00", "#56B4E9", "#009E73")) +
+    theme_classic() +
+    theme(text = element_text(size = 12))
+  fig5_proprange_full
+  
+  ## How much of the species' true range is sampled using each of the sampling methods?
+  fig5_proprange_3sd <- ggplot(subset(prop_range, uptake!=0), aes(x = method, y = prop_cov_increase, fill = factor(uptake))) +
+    geom_boxplot() +
+    ylim(0, 3*sd(prop_range$prop_cov_increase)) +
+    ylab("Increase in coverage of species ranges\nfrom new observations") +
+    xlab('') +
+    scale_fill_manual(name = 'Uptake (%)', labels = c(1, 10, 50),
+                      values = c("#E69F00", "#56B4E9", "#009E73")) +
+    theme_classic() +
+    theme(text = element_text(size = 12))
+  fig5_proprange_3sd
+  
+  fig5_proprange <- fig5_proprange_full/fig5_proprange_3sd + 
+    plot_annotation(tag_levels = 'a') + 
+    plot_layout(guides = 'collect')
+  fig5_proprange
+  
+  
+  # Proportion of range increase by prevalence
+  prop_range %>% 
+    group_by(prop_cov_inc_cat) %>% 
+    reframe(pinc = range(prop_cov_increase)) %>% 
+    mutate(pinc*100) #### Create custom groups using this?
+  
+  prop_range_prevpl <- ggplot(na.omit(subset(prop_range, uptake != 0 & method != 'initial')), 
+                              aes(x = prev_cat, fill = factor(prop_cov_inc_cat))) +
+    geom_bar(position="fill") +
+    ylab('Proportion of species') +
+    xlab('Prevalence category') +
+    facet_grid(uptake~method) +
+    scale_fill_manual(name = 'Proportion of range sampled\nby new observations (%)',
+                      labels = c('0.001 < prop > 0.01', 
+                                 '0.01 < prop > 0.03',
+                                 '0.03 < prop > 0.05',
+                                 '0.05 < prop > 6'),
+                      values = c("#E69F00", "#56B4E9", "#009E73",
+                                 "#0072B2")) +#, "#D55E00")) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
+          text = element_text(size = 14))
+  prop_range_prevpl
+  
+  if(write){
+    ggsave(fig5_proprange, filename = 'outputs/plots/paper/supplementary_figures/fig5_proprange.png',
+           width = 9.5, height = 9.5)
+    ggsave(prop_range_prevpl, filename = 'outputs/plots/paper/supplementary_figures/fig5_proprange_prevalence.png',
+           width = 11.5, height = 8.5)
+  }
+}
 
 ## Raw AUC/MSE/correlations scores for models before/after AS? 
 head(et)
 eval_comp <- subset(et, method != 'initial') %>% 
   dplyr::select(method, community, uptake, species, mse, corr, auc, init_mse, init_auc, init_corr)
+head(eval_comp)
 
-ggplot()
+auc <- eval_comp %>% 
+  dplyr::select(method, community, uptake, auc, init_auc) %>% 
+  pivot_longer(cols = c(auc, init_auc))
+
+head(auc)
+
+ggplot(auc, aes(method, value, fill = name)) +
+  geom_boxplot() +
+  facet_wrap(~uptake)
+
