@@ -325,7 +325,7 @@ meth_names <- list(
 }
 
 
-#### Plotting -----
+#### Plotting
 
 ## figure 3 - model improvements + N models > %
 {
@@ -583,20 +583,4 @@ meth_names <- list(
            width = 11.5, height = 8.5)
   }
 }
-
-## Raw AUC/MSE/correlations scores for models before/after AS? 
-head(et)
-eval_comp <- subset(et, method != 'initial') %>% 
-  dplyr::select(method, community, uptake, species, mse, corr, auc, init_mse, init_auc, init_corr)
-head(eval_comp)
-
-auc <- eval_comp %>% 
-  dplyr::select(method, community, uptake, auc, init_auc) %>% 
-  pivot_longer(cols = c(auc, init_auc))
-
-head(auc)
-
-ggplot(auc, aes(method, value, fill = name)) +
-  geom_boxplot() +
-  facet_wrap(~uptake)
 
