@@ -26,7 +26,7 @@ n_communities = 1:50
 n_species = 1:50
 
 # the adaptive sampling methods to use 
-method = c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage") 
+method = "coverage" #c("none", "uncertainty", "prevalence", "unc_plus_prev", "unc_plus_recs", "coverage") 
 
 # # set outpath and inputs for testing
 # dirs <- data.frame(outpath = 'broom',
@@ -65,3 +65,23 @@ sjob <- slurm_apply(slurm_adaptive_sample,
                                          account = "short4hr"),
                     sh_template = "jasmin_submit_sh.txt")
 
+
+# ### for testing
+# i = 1
+# 
+# community_file = pars$community_file[i]
+# sdm_path = pars$sdm_path[i]
+# effort = pars$effort[i]
+# background = pars$background[i]
+# env_data =  pars$env_data[i]
+# probability_weight_adj = 1
+# weight_adj = 1
+# method = pars$method[i]
+# uptake = 0.5
+# n = 2000
+# community_version = pars$community_version[i]
+# AS_version = pars$AS_version[i]
+# outPath = pars$outPath[i]
+# rownum = pars$rownum[i]
+# model = c("rf", "gam", "lr")
+# extent_crop = NULL

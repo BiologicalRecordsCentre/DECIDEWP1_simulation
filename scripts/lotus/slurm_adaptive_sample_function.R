@@ -187,10 +187,23 @@ slurm_adaptive_sample <- function(rownum, community_file, sdm_path, effort, back
   }
   
   if (method == "coverage"){
-    if(is.null(eff_layer)) stop("Cannot adaptively sample using method 'coverage' without specifying an existing sampling raster (i.e. currently eff_layer = NULL)")
+    # if(is.null(eff_layer)) stop("Cannot adaptively sample using method 'coverage' without specifying an existing sampling raster (i.e. currently eff_layer = NULL)")
     
-    eff_zero <- raster::as.data.frame(eff_layer, xy=TRUE)
-    empty_cells <- eff_zero[eff_zero$butterfly_1km_effort == 0 & !is.na(eff_zero$butterfly_1km_effort),]#1 because we added 1 to the eff_layer to allow sampling in previously unvisited squares
+    require(tidyverse)
+    ## create the observations dataframe to find unsampled cells
+    # get all the records that have been made in a community
+    # this is equivalent to eff_df but for the simulated data rather than the real butterfly data
+    obvs <- na.omit(do.call(rbind, lapply(community, function(x) x$observations)))
+    
+    # get the number of records in each recorded grid cell
+    obvs_recs <- obvs %>% mutate(x=lon,y=lat,lon=NULL,lat=NULL) %>% 
+      group_by(x, y) %>% tally
+    
+    #combine effort and score dataframes to get the empty cells as well
+    comb_df <- merge(community_scores, obvs_recs, by = c("x", "y"), all.x = TRUE, sort = FALSE)
+    comb_df$n[is.na(comb_df$n)] <- 0 # define NAs as 0; NAs are where there are no records
+    
+    empty_cells <- comb_df[comb_df$n == 0,]
     
     if(is.null(uptake)){
       new_locs <- sample(1:nrow(empty_cells), size = n, replace = FALSE)#sample from empty cells with equal prob
