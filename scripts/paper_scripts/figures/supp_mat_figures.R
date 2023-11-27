@@ -81,7 +81,7 @@ meth_names <- list(
     theme_classic() +
     ylab('Prevalence') +
     xlab('Rank') + 
-    labs(colour = 'Community name')
+    theme(legend.position = "none")
   rank_abund_comm
   
   if(write){
