@@ -18,6 +18,7 @@ meth_names <- list(
 
 # Butterfly rank abundance curve
 {
+  # these data cannot be published
   bdf <- read_csv("../DECIDE_WP1/data/edited_insect_data/butterfly/butterfly_EastNorths_no_duplicates_2021_12_06.csv") %>% 
     as.data.frame()
   head(bdf)
