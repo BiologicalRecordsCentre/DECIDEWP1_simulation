@@ -284,19 +284,15 @@ write = TRUE
                  aes(x = prev_cat, fill = factor(perc_imp_mse))) +
     geom_bar(position="fill") +
     ylab('Proportion of models') +
-    xlab('Prevalence category') +
-    # ylim(0,0.25) +
+    xlab('Prevalence decile') +
     facet_grid(~method) +
-    scale_fill_manual(name = 'Improvement in\nmodel MSE (%)', 
-                      # labels = c('< -5', '-5 to -1', 
-                      #            '-1 to 1', '1 to 5', '> 5'),
+    scale_fill_brewer(name = 'Improvement in\nmodel MSE (%)',
+                      palette = "PRGn",
                       labels = c('< -5', '-5 to 0', 
-                                 '0 to 5', '> 5'),
-                      values = c("#E69F00", "#56B4E9", "#009E73",
-                                 "#0072B2")) +#, "#D55E00")) +
+                                 '0 to 5', '> 5')) +
     theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-          text = element_text(size = 14))
+    theme(text = element_text(size = 14)) +
+    scale_x_continuous(breaks=seq(0, 10, 2))
   fig4
   
   

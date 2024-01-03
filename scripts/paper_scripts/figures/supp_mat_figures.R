@@ -459,16 +459,15 @@ meth_names <- list(
                               aes(x = prev_cat, fill = factor(perc_imp_mse))) +
       geom_bar(position="fill") +
       ylab('Proportion of models') +
-      xlab('Prevalence category') +
+      xlab('Prevalence decile') +
       facet_grid(uptake~method) +
-      scale_fill_manual(name = 'Improvement in\nmodel MSE (%)', 
+      scale_fill_brewer(name = 'Improvement in\nmodel MSE (%)',
+                        palette = "PRGn",
                         labels = c('< -5', '-5 to 0', 
-                                   '0 to 5', '> 5'),
-                        values = c("#E69F00", "#56B4E9", "#009E73",
-                                   "#0072B2")) +#, "#D55E00")) +
+                                   '0 to 5', '> 5')) +
       theme_bw() +
-      theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-            text = element_text(size = 14))
+      theme(text = element_text(size = 14)) +
+      scale_x_continuous(breaks=seq(0, 10, 2))
     fig4_mse_uptake
   }
   
@@ -478,16 +477,15 @@ meth_names <- list(
                                aes(x = prev_cat, fill = factor(perc_imp_corr))) +
       geom_bar(position="fill") +
       ylab('Proportion of models') +
-      xlab('Prevalence category') +
+      xlab('Prevalence decile') +
       facet_grid(uptake~method) +
-      scale_fill_manual(name = 'Improvement in\nmodel correlation (%)', 
+      scale_fill_brewer(name = 'Improvement in\nmodel correlation (%)',
+                        palette = "PRGn",
                         labels = c('< -5', '-5 to 0', 
-                                   '0 to 5', '> 5'),
-                        values = c("#E69F00", "#56B4E9", "#009E73",
-                                   "#0072B2")) +#, "#D55E00")) +
+                                   '0 to 5', '> 5')) +
       theme_bw() +
-      theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-            text = element_text(size = 14))
+      theme(text = element_text(size = 14)) +
+      scale_x_continuous(breaks=seq(0, 10, 2))
     fig4_corr_uptake
   }
   
@@ -497,16 +495,15 @@ meth_names <- list(
                               aes(x = prev_cat, fill = factor(perc_imp_auc))) +
       geom_bar(position="fill") +
       ylab('Proportion of models') +
-      xlab('Prevalence category') +
+      xlab('Prevalence decile') +
       facet_grid(uptake~method) +
-      scale_fill_manual(name = 'Improvement in\nmodel AUC (%)', 
+      scale_fill_brewer(name = 'Improvement in\nmodel AUC (%)',
+                        palette = "PRGn",
                         labels = c('< -5', '-5 to 0', 
-                                   '0 to 5', '> 5'),
-                        values = c("#E69F00", "#56B4E9", "#009E73",
-                                   "#0072B2")) +#, "#D55E00")) +
+                                   '0 to 5', '> 5')) +
       theme_bw() +
-      theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-            text = element_text(size = 14))
+      theme(text = element_text(size = 14)) +
+      scale_x_continuous(breaks=seq(0, 10, 2))
     fig4_auc_uptake
   }
   
@@ -563,18 +560,17 @@ meth_names <- list(
                               aes(x = prev_cat, fill = factor(prop_cov_inc_cat))) +
     geom_bar(position="fill") +
     ylab('Proportion of species') +
-    xlab('Prevalence category') +
+    xlab('Prevalence decile') +
     facet_grid(uptake~method) +
-    scale_fill_manual(name = 'Proportion of range sampled\nby new observations (%)',
+    scale_fill_brewer(name = 'Proportion of range sampled\nby new observations (%)',
+                      palette = "PRGn",
                       labels = c('0.001 < prop > 0.01', 
                                  '0.01 < prop > 0.03',
                                  '0.03 < prop > 0.05',
-                                 '0.05 < prop > 6'),
-                      values = c("#E69F00", "#56B4E9", "#009E73",
-                                 "#0072B2")) +#, "#D55E00")) +
+                                 '0.05 < prop > 6')) +
     theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1),
-          text = element_text(size = 14))
+    theme(text = element_text(size = 14)) +
+    scale_x_continuous(breaks=seq(0, 10, 2))
   prop_range_prevpl
   
   if(write){
