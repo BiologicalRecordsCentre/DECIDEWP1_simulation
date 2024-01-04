@@ -320,7 +320,7 @@ meth_names <- list(
               prevalence_ncells = unique(prevalence_ncells))  %>%
     ungroup() %>% 
     mutate(prop_cov_increase = new_obs/prevalence_ncells, # change in the proportion of the TRUE range that is sampled
-           prop_cov_inc_cat = dplyr::ntile(prop_cov_increase, 4),
+           prop_cov_inc_cat = cut_number(prop_cov_increase, 4),
            sp_id = paste(community, uptake, species, sep = "_"))
   
 }
