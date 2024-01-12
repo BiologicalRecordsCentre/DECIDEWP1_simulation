@@ -1,0 +1,9 @@
+#!/bin/bash
+#SBATCH -p short-serial
+#SBATCH --ntasks 1
+#SBATCH --time=1:00:00
+#SBATCH --array=1-10
+#SBATCH --mem 16000
+
+module add jaspy
+R CMD BATCH "--args ${SLURM_ARRAY_TASK_ID}" lotus_runsimsdm.R  "sdmout${SLURM_ARRAY_TASK_ID}.Rout"
