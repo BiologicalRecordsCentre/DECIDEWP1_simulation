@@ -1,8 +1,12 @@
-# DECIDEWP1_simulation
+# Simulating adaptive sampling by citizen scientists  
 
-Repository for the simulation study side of WP1 on the DECIDE project. These scripts setup communities which are based on the butterfly and moth communities in the main project, to evaluate different adaptive sampling metrics. These include methods to approximate as well as possible those used in the main project. 
+This repository contains the R code needed to recreate the analyses in the paper "Adaptive sampling by citizen scientists improves species distribution model performance: a simulation study", part of the NERC-funded DECIDE project. In these simulations, we investigated the effect of different methods of adaptive sampling on the perfomance of species distribution models. We also explored the effect of simulated recorder participation (what we call uptake) on the effect of adaptive sampling on model performance.  
+
+This code is written to be run on a SLURM cluster to enable easy modelling of multiple species of interest and relies heavily on the rslurm package to submit jobs (Marchaud _et al._ 2023 https://cran.r-project.org/web/packages/rslurm/index.html). The necessary scripts need to be transfered to the chosen cluster and the locations of these need to be specified using config files (Allaire _et al._ 2023 https://cran.r-project.org/web/packages/config/index.html). 
 
 ## Where's the code?
+
+Here is a brief overview of the main scripts and folder structure. 
 
 All code to run the simulations are found in `scripts/lotus/` used in the following order:
 
@@ -14,20 +18,6 @@ All code to run the simulations are found in `scripts/lotus/` used in the follow
 
 The code to produce all figures can be found in `scripts/paper_scripts/figures/`.
 
-## Version explanation
-
-- v3_asv1: community 1:50 run on 14/01/2022 with mechanism to sample across all species and with detectability set to 0.2. For adaptive sampling: `uptake = NULL`. Final filename `= asv1_v3combined_outputs_comm1_50_spp50.csv`
-- v3_asv2: Same communities as v3, but adaptive sampling `uptake = 0.5`; filename `= asv2_v3combined_outputs_comm1_50_spp50.csv`. Started adaptive sampling 31/01/22, finished 1/2/22. 
-- v3_asv3: Same communities as v3, but adaptive sampling `uptake = 1`. Started adaptive sampling 1/2/22, finished 2/2/2022. Filename `= asv3_v3combined_outputs_comm1_50_spp50.csv`.
-- v3_asv4: Same communities as v3, but adaptive sampling `uptake = 0.1`. Started adaptive sampling running 2/2/22. Finished 3/2/2022. Filename `= asv4_v3combined_outputs_comm1_50_spp50.csv`.
-- v3_asv5: Same communities as v3, but adaptive sampling `uptake = 0.01`. Started adaptive sampling running 4/2/22. Finished 9/2/22. Filename `= asv5_v3combined_outputs_comm1_50_spp50.csv`.
-- v3_asv6: same communities as v3, models on communities 1:50. `uptake = 0.01`. Noticed mistake in adaptive sampling function that detectability is set to 0.2. This will effect results relative to 'none' method. Started AS (for all 50 communities) on 9/2/22, Finished 16.02.22
-- v3_asv7: same communities as v3, models on communities 1:50. `uptake = 0.1`. Noticed mistake in adaptive sampling function that detectability is set to 0.2. This will effect results relative to 'none' method. Started AS (for all 50 communities) on 16.02.22
-- v3_asv8: v3 communities, models on communities 1:50. `uptake = 0.1`. Detectability is set to 0.2. Removed `probability_weight_adj` parameter from the adaptive sampling methods with uptake as it was likely reinforcing biases.
-- v4_asv1: v4 communities, models on communities 1:50 with fixed bugs to do with environmental variables being different between models. Detectability set to 0.2. Uptake set to `0.1`. Finished 12.5.22
-- v4_asv2: uptake set to `0.01`.
-- v4_asv3: uptake set to `0`
-- v4_asv4: uptake set to `0.5`.
 
 
 
