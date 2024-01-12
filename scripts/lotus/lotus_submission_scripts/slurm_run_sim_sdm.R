@@ -32,7 +32,7 @@ for(asv in 1:nrow(asv_version)){
     ## new parameters code to try and automate the parameter generation file a little more
     n_species = 1:50 # vector of number of species in each community
     n_communities = s # number of communities to go through # can submit 11 at a time ## done 1-11, running 12-22, done 23-33, done 34-44, done 45-50
-    models = c('lr', 'gam', 'rf')
+    models = c('lr', 'gam', 'rf') # models to run
     data_type = "initial_AS_coverage" #c("initial_AS_none", "initial_AS_uncertainty", "initial_AS_prevalence", "initial_AS_unc_plus_prev", "initial_AS_unc_plus_recs", "initial_AS_coverage") # 'initial'
     
     # name of the versions we are running - so we're not overwriting things
@@ -49,15 +49,15 @@ for(asv in 1:nrow(asv_version)){
     # # set commpath to something for testing (then delete 'dirs$')
     # dirs <- data.frame(commpath = 'blob')
     
-    # pars data frame
+    # pars data frame - written to be able to automatically generate the correct pars file depending on inputs above.
     pars <- data.frame(index = rep(n_species, length(n_communities)*length(models)*length(data_type)),
                        spdata = rep(sprintf(
                          paste0(dirs$commpath, community_version, simulation_run_name,"/", community_version,
                                 "community_%i_%i_sim/", ifelse(data_type!='initial', paste0(AS_version, '_'), ''), community_version, "community_%i_%i_sim_%s.rds"), 
                          rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), 
                          rep(rep(n_communities, each = length(models)), each = length(data_type)), max(n_species), data_type
-                       ), each = length(n_species)),
-                       model = rep(rep(rep(models, length(n_communities)), each = length(data_type)), each = length(n_species)),
+                       ), each = length(n_species)), # location of all the community data
+                       model = rep(rep(rep(models, length(n_communities)), each = length(data_type)), each = length(n_species)), # which models to use
                        data_type = rep(rep(data_type, length(n_communities)*length(models)), each = length(n_species)), 
                        writeRas = FALSE,
                        GB = TRUE,
