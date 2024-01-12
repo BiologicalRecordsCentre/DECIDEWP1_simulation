@@ -6,19 +6,34 @@ This code is written to be run on a SLURM cluster to enable easy modelling of mu
 
 ## Where's the code?
 
-Here is a brief overview of the main scripts and folder structure. 
+The scripts to run the main analyses on a SLURM cluster can be found in the `lotus/` folder. The functions used to carry out the various parts of the analysis are in the `functions/` folder. Scripts to plot the figures in the main script and supplementary materials can be found in `figures/` folder. The `evaluation` folder contains scripts to perform various things associated with checking the main results and several aspects of the simulation workflow. These are not used to perform any of the analysis or plotting in the paper. The `processing_environmental_data.R` script was used to process all of the environmental layers into a format useable in the analyses. The processed environmental data used to run all the analyses are provided. 
 
-All code to run the simulations are found in `scripts/lotus/` used in the following order:
+### The main analysis
 
-1. `slurm_simulate_species.R` 
+The code to run the main analyses on the SLURM cluster are split into three folders. The scripts to submit jobs to the SLURM cluster can all be found in the folder `lotus/lotus_submission_scripts/`. Each of the scripts in here corresponds to one of the scripts in the folder `lotus/lotus_functions/`, which contains the functions used by `rslurm::slurm_apply()` to run the various parts of the analyses. Once all scripts are in their correct locations, scripts in `lotus/lotus_submission_scripts/` need to be run in the following order to carry out the adaptive sampling workflow.
+
+1. `slurm_simulate_species.R`
+
+Simulate `n` species in each of the `n_communities`. Outputs communities of `n` species as Rdata files.
+
+
 2. `slurm_run_sim_sdm.R`
+
+Run the species distribution models. Set the `data_type` parameter to `initial_AS_coverage` for the first model run to get the baseline models.
+
+
 3. `slurm_adaptive_sample.R`
-4. rerun `slurm_run_sim_sdm.R` with the AS methods added as parameters
+
+Carry out the adaptive sampling using the methods described in the paper.
+
+
+4. rerun `slurm_run_sim_sdm.R`
+
+Run the species distribution models for a second time. This time setting the  `data_type` parameter to a vector containing the names of the various adaptive sampling methods.
+
+
 5. `slurm_evaluate.R`
 
-The code to produce all figures can be found in `scripts/paper_scripts/figures/`.
+Carry out the evaluation comparing the baseline and adaptively sampled species distribution models to the true distributions of each species.
 
-
-
-
-*To be continued...*
+This completes the main analyses which are run on the SLURM cluster. The folder `lotus_other` contains scripts to perform various other aspects useful for the paper. Most importantly, the script `combine_files_on_lotus.R` combines all of the evaluation outputs into a single file for subsequent analysis.

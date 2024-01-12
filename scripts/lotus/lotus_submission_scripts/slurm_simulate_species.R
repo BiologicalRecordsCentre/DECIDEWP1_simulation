@@ -13,14 +13,14 @@ n_communities = 12:50
 pars <- data.frame(env_data = paste0(dirs$inpath, "/envdata_1km_no_corr_noNA.grd"),
                    outPath = dirs$outpath, 
                    seed = n_communities, # community number
-                   max_samp = 20000, 
-                   n_env = 10, 
-                   n = 50,
-                   det_prob = 0.2,
-                   sample_across_species = TRUE,
-                   effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), 
-                   background = "MeanDiRange",
-                   community_version_name = community_version_name,
+                   max_samp = 20000, # max number of observations per species
+                   n_env = 10, # number of environmental variables from which to sample for species generation
+                   n = 50, # number of species per community
+                   det_prob = 0.2, # detection probability
+                   sample_across_species = TRUE, # whether to sample the same locations across all species (i.e. list structure) or sample different locations for each species
+                   effort = paste0(dirs$inpath,"butterfly_1km_effort_layer.grd"), # sampling effort layer
+                   background = "MeanDiRange", # a layer which contains a value for each cell in the region of interest
+                   community_version_name = community_version_name, # Which community version
                    simulation_run_name = 'communities_1km') # the name of the run name - don't change unless changing the resolution of the area of interest.
 
 sjob <- slurm_apply(simulate_species, pars, 
