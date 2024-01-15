@@ -11,10 +11,10 @@ All code can be found in the `scripts/` folder.
 ```bash
 
 ├─ scripts
-│  ├─ config_files
-│  ├─ evaluation
-│  └─ figures
-└──── lotus
+   ├─ config_files
+   ├─ evaluation
+   ├─ figures
+   └─ lotus
         ├─ lotus_functions
         ├─ lotus_other
         └─ lotus_submission_scripts
