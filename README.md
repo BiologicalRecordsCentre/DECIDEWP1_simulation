@@ -10,7 +10,7 @@ All code can be found in the `scripts/` folder.
 
 ```bash
 
-├─ scripts
+└─ scripts
    ├─ config_files
    ├─ evaluation
    ├─ figures
