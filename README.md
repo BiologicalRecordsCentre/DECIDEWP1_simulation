@@ -14,7 +14,7 @@ All code can be found in the `scripts/` folder.
 |  ├─ config_files
 |  ├─ evaluation
 |  ├─ figures
-└─ ├─ lotus
+└──── lotus
         ├─ lotus_functions
         ├─ lotus_other
         └─ lotus_submission_scripts
