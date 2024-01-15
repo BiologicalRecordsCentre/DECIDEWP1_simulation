@@ -6,7 +6,7 @@ This code is written to be run on a SLURM cluster to enable easy modelling of mu
 
 ## Where's the code?
 
-The scripts to run the main analyses on a SLURM cluster can be found in the `lotus/` folder. The functions used to carry out the various parts of the analysis are in the `functions/` folder. Scripts to plot the figures in the main script and supplementary materials can be found in `figures/` folder. The `evaluation` folder contains scripts to perform various things associated with checking the main results and several aspects of the simulation workflow. These are not used to perform any of the analysis or plotting in the paper. The `processing_environmental_data.R` script was used to process all of the environmental layers into a format useable in the analyses. The processed environmental data used to run all the analyses are provided. 
+The scripts to run the main analyses on a SLURM cluster can be found in the `lotus/` folder. The functions used to carry out the various parts of the analysis are in the `functions/` folder. Code to plot the figures in the main manuscript and supplementary materials can be found in `figures/` folder. The `evaluation` folder contains scripts to perform various things associated with checking the main results and several aspects of the simulation workflow. These are not used to perform any of the analysis or plotting in the paper. The `processing_environmental_data.R` script was used to process all of the environmental layers into a format useable in the analyses. The processed environmental data used to run all the analyses are provided. 
 
 ### The main analysis
 
